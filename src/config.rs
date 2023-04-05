@@ -1,3 +1,5 @@
+use camino::Utf8PathBuf;
+use chrono::NaiveDate;
 use serde::Deserialize;
 
 #[derive(Deserialize, Debug)]
@@ -9,6 +11,8 @@ pub struct Config {
 #[derive(Deserialize, Debug)]
 pub struct Post {
     pub title: String,
+    pub path: Utf8PathBuf,
     #[serde(default)]
     pub draft: bool,
+    pub date: NaiveDate,
 }
