@@ -421,6 +421,6 @@ performance. I'll write more about these in a future post.
 
 If you want to hear about that when it comes out, or just generally want to be
 notified the next time I have something to share online, you can find me in the
-Fediverse [@nixon@treehouse.systems](https://social.treehouse.systems/@nixon).
+Fediverse [@aDot@treehouse.systems](https://social.treehouse.systems/@aDot).
 If you have questions or comments on this post, I'd love to hear them on
 [github](https://github.com/aDotInTheVoid/site/issues/1).
