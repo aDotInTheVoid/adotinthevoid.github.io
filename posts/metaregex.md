@@ -1,9 +1,3 @@
----
-title: "Metaregex: Python can be fast too"
-date: 2020-05-20
-draft: false
----
-
 [![xkcd 1313](https://imgs.xkcd.com/comics/regex_golf.png)](https://xkcd.com/1313/)
 [^xkcd_license]
 

@@ -1,4 +1,4 @@
-base_url = "https://www.doc.ic.ac.uk/~ne321/"
+base_url = "/"
 
 [[posts]]
 title = "A new site"
@@ -7,11 +7,11 @@ date = "2022-04-05"
 draft = true
 
 [[posts]]
-title = "Metaregex: Python can be fast too"
-path = "posts/metaregex.md"
-date = "2020-05-20"
-
-[[posts]]
 title = "Rustdoc JSON in 2022"
 path = "posts/rustdoc-json-2022.md"
 date = "2022-12-31"
+
+[[posts]]
+title = "Metaregex: Python can be fast too"
+path = "posts/metaregex.md"
+date = "2020-05-20"

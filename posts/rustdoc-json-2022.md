@@ -1,10 +1,3 @@
----
-title: Rustdoc JSON in 2022
-draft: false
-date: 2022-12-31
----
-
-
 It's that time of year again, when everyone
 [is](https://predr.ag/blog/cargo-semver-checks-today-and-in-2023/)
 [writing](https://bytecodealliance.org/articles/cranelift-progress-2022)
