@@ -1,7 +1,17 @@
 :root {
-    --color-background: #e8ece8;
+    --color-background: pink;
     --color-text: #282020;
     --color-accent: #a468a5;
+
+    /* GitHub Light */
+    --color-code-bg: #FFFFFF;
+    --color-code-red: #D73A49;
+    --color-code-purple: #6F42C1;
+    --color-code-white: #24292E;
+    --color-code-orange: #E36209;
+    --color-code-light-blue: #005CC5;
+    --color-code-dark-blue: #032F62;
+    --color-code-grey: #6A737D;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -9,9 +19,18 @@
         --color-background: #282020;
         --color-text: #e8ece8;
         --color-accent: #9f699c;
+
+        /* From github dark */
+        --color-code-bg: #24292E;
+        --color-code-red: #F97583;
+        --color-code-purple: #B392F0;
+        --color-code-white: #E1E4E8;
+        --color-code-orange: #FFAB70;
+        --color-code-dark-blue: #79B8FF;
+        --color-code-light-blue: #9ECBFF;
+        --color-code-grey: #6A737D;
     }
 }
-
 
 html {
     background-color: var(--color-background);
@@ -60,7 +79,75 @@ a.anchor::before {
 :hover>a.anchor::before {
     display: block;
     opacity: 1;
-
 }
 
-/* a.anchor:hover::before {} */
+pre {
+    background-color: var(--color-code-bg);
+    padding: 1ch;
+    border-radius: 1ch;
+    white-space: pre-wrap;
+}
+
+.hl-keyword {
+    color: var(--color-code-red);
+}
+
+.hl-operator {
+    color: var(--color-code-red);
+}
+
+.hl-function {
+    color: var(--color-code-purple);
+}
+
+.hl-type {
+    color: var(--color-code-purple);
+}
+
+.hl-punctuation-bracket {
+    color: var(--color-code-white);
+}
+
+.hl-variable-parameter {
+    color: var(--color-code-orange);
+}
+
+.hl-punctuation-delimiter {
+    color: var(--color-code-red);
+}
+
+.hl-property {
+    color: var(--color-code-white);
+}
+
+.hl-constructor {
+    color: var(--color-code-dark-blue);
+}
+
+.hl-label {
+    color: var(--color-code-red);
+}
+
+.hl-type-builtin {
+    color: var(--color-code-dark-blue);
+}
+
+.hl-string {
+    color: var(--color-code-light-blue);
+}
+
+.hl-function-macro {
+    color: var(--color-code-purple);
+}
+
+.hl-function-method {
+    color: var(--color-code-purple);
+}
+
+.hl-comment {
+    color: var(--color-code-grey);
+}
+
+.hl-constant-builtin {
+    color: var(--color-code-dark-blue);
+}

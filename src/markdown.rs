@@ -1,7 +1,7 @@
 use std::collections::{HashMap, HashSet};
 use std::fmt::Write;
 
-use pulldown_cmark::html;
+use pulldown_cmark::{html, CodeBlockKind};
 use pulldown_cmark::{CowStr, Event, Options, Parser, Tag};
 
 pub fn render(input: &str) -> String {
@@ -41,6 +41,17 @@ pub fn render(input: &str) -> String {
 
                 main_events.push(Event::Text(t));
             }
+            Event::Start(Tag::CodeBlock(CodeBlockKind::Fenced(lang))) if !lang.is_empty() => {
+                let Some(Event::Text(source)) = parser.next() else {panic!()};
+                let Some(Event::End(Tag::CodeBlock(_))) = parser.next() else {panic!()};
+
+                let html = crate::highlight::highlight(&lang, &source);
+
+                main_events.push(Event::Html(CowStr::Borrowed("<pre><code>")));
+                main_events.push(Event::Html(CowStr::Boxed(html.into_boxed_str())));
+                main_events.push(Event::Html(CowStr::Borrowed("</code></pre>")));
+            }
+
             Event::FootnoteReference(name) => {
                 let len = numbers.len() + 1;
                 let number = *numbers.entry(name.clone()).or_insert(len);

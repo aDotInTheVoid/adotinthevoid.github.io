@@ -1,10 +1,10 @@
-I'm rewriting my site in RUST
+use tree_sitter_highlight::{HighlightConfiguration, Highlighter, HtmlRenderer};
 
-
-```rust
 const FOO: &'static str = "ABCD";
 
 pub fn highlight(lang: &str, source: &str) -> String {
+    let _ = FOO;
+
     let mut conf = match lang {
         "rust" => HighlightConfiguration::new(
             tree_sitter_rust::language(),
@@ -44,33 +44,3 @@ pub fn highlight(lang: &str, source: &str) -> String {
 
     String::from_utf8(html.html).unwrap()
 }
-```
-
-```toml
-[package]
-name = "alona-page"
-version = "0.1.0"
-edition = "2021"
-
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
-
-[dependencies]
-anyhow = "1.0.70"
-camino = { version = "1.1.4", features = ["serde1"] }
-chrono = { version = "0.4.24", features = ["serde"] }
-clap = { version = "4.2.1", features = ["derive"] }
-fs-err = "2.9.0"
-minijinja = "0.31.0"
-pulldown-cmark = "0.9.2"
-serde = { version = "1.0.159", features = ["derive"] }
-toml = "0.7.3"
-tree-sitter = "0.20.10"
-tree-sitter-highlight = "0.20.1"
-tree-sitter-rust = "0.20.3"
-tree-sitter-toml = "0.20.0"
-```
-
-
-*Italic Text* `Some Inline Monospace` **BOLD TEXT** ~~Strikethroug~~
-
-## Headlings

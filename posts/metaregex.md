@@ -247,26 +247,28 @@ $ hyperfine python norvig.py
 Time (mean ± σ):    1.186 s ± 0.013 s  [User: 1.179s, System: 0.003s]
 Range (min … max):  1.161 s … 1.252 s  500 runs
 ```
+
 [^bench notes]
 
-[^bench notes]:  See [here](https://github.com/aDotInTheVoid/meta-regex-golf)
+[^bench notes]: See [here](https://github.com/aDotInTheVoid/meta-regex-golf)
 for the full setup and code, but in short I originally used `time` and `awk` to
 average benchmarks, but [a kind
 redditor](https://www.reddit.com/r/rust/comments/gnjc3y/meta_regex_golf_python_can_be_fast_too_adventures/fra6tta?utm_source=share&utm_medium=web2x),
 suggested [hyperfine](https://github.com/sharkdp/hyperfine), so I reran the
 benchmarks with that.
-
+    </p><p>
     Benchmarked with 
     `hyperfine -w 15 -m 500 --export-markdown BENCH.md "python3 norvig_nocache.py" "python3 norvig_with_cache.py" out/*`
-
-    #### System Details
-    - rustc 1.43.1 (8d69840ab 2020-05-04)
-    - Python 3.7.7
-    - hyperfine 1.6.0
-    - Fedora 31 (Workstation Edition) x86_64
-    - Linux 5.6.13-200.fc31.x86_64
-    - glibc-2.30-11.fc31.x86_64
-    - Intel i7-2700K (8) @ 3.900GHz, 7922MiB Ram (as reported by neofetch)
+    on a system with
+    </p><p><ul>
+    <li>rustc 1.43.1 (8d69840ab 2020-05-04)</li>
+    <li>Python 3.7.7</li>
+    <li>hyperfine 1.6.0</li>
+    <li>Fedora 31 (Workstation Edition) x86_64</li>
+    <li>Linux 5.6.13-200.fc31.x86_64</li>
+    <li>glibc-2.30-11.fc31.x86_64</li>
+    <li>Intel i7-2700K (8) @ 3.900GHz, 7922MiB Ram (as reported by neofetch)</li>
+    </ul>
 
 
 How could this have happened. Well Norvig's code (probably) spends most of it's

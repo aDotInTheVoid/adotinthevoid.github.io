@@ -1,6 +1,6 @@
 b: build
 build:
-    cargo r
+    cargo r -- --drafts
     cp static/* out
 
 s: serve
