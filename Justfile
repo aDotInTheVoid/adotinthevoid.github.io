@@ -1,6 +1,7 @@
 b: build
 build:
     cargo r
+    cp static/* out
 
 s: serve
 serve: build

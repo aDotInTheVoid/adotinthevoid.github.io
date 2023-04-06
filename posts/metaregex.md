@@ -295,6 +295,7 @@ Modest gains, but this isn't what we're looking for.
 other than the default seemed to slow it down. This is also what v5 was. v4 was to 
 `#[inline(never)]`, and didn't need to show up in the benchmark. If you really want to see
 them, you can dig through the history in the [repo](https://github.com/aDotInTheVoid/meta-regex-golf/)
+
 ## Profiling
 
 Given none of the cheep tricks have worked, we need to actually know what we're

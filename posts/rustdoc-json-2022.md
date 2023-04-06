@@ -352,17 +352,7 @@ This was addressed in part with dedicated test adding PRs [^test_pr], but mainly
 due to good habits of always adding tests when changing behaviour that we were
 lucky to inherit from the wider rust project.
 
-[^test_pr]:
-    [#93660](https://github.com/rust-lang/rust/pull/93660/)
-    , [#94861](https://github.com/rust-lang/rust/pull/94861/)
-    , [#98166](https://github.com/rust-lang/rust/pull/98166/)
-    , [#98548](https://github.com/rust-lang/rust/pull/98548/)
-    , [#99479](https://github.com/rust-lang/rust/pull/99479/)
-    , [#101634](https://github.com/rust-lang/rust/pull/101634/)
-    , [#101701](https://github.com/rust-lang/rust/pull/101701/)
-    , [#103065](https://github.com/rust-lang/rust/pull/103065/)
-    , [#105027](https://github.com/rust-lang/rust/pull/105027/)
-    , [#105063](https://github.com/rust-lang/rust/pull/105063/)
+[^test_pr]: [#93660](https://github.com/rust-lang/rust/pull/93660/) , [#94861](https://github.com/rust-lang/rust/pull/94861/) , [#98166](https://github.com/rust-lang/rust/pull/98166/) , [#98548](https://github.com/rust-lang/rust/pull/98548/) , [#99479](https://github.com/rust-lang/rust/pull/99479/) , [#101634](https://github.com/rust-lang/rust/pull/101634/) , [#101701](https://github.com/rust-lang/rust/pull/101701/) , [#103065](https://github.com/rust-lang/rust/pull/103065/) , [#105027](https://github.com/rust-lang/rust/pull/105027/) , [#105063](https://github.com/rust-lang/rust/pull/105063/)
 
 
 ## Correctness Fixes
@@ -379,29 +369,7 @@ only find assertion failures, makes up for this with sheer volume. One thing I
 want to look into next year is running the `jsondoclint` tool in crater, so it
 can catch missing IDs, instead of just internal assertions failing.
 
-[^fix_pr]:
-    [#92860](https://github.com/rust-lang/rust/pull/92860/)
-    , [#93132](https://github.com/rust-lang/rust/pull/93132/)
-    , [#93954](https://github.com/rust-lang/rust/pull/93954/)
-    , [#97599](https://github.com/rust-lang/rust/pull/97599/)
-    , [#98053](https://github.com/rust-lang/rust/pull/98053/)
-    , [#98195](https://github.com/rust-lang/rust/pull/98195/)
-    , [#98390](https://github.com/rust-lang/rust/pull/98390/)
-    , [#98577](https://github.com/rust-lang/rust/pull/98577/)
-    , [#98611](https://github.com/rust-lang/rust/pull/98611/)
-    , [#98681](https://github.com/rust-lang/rust/pull/98681/)
-    , [#100299](https://github.com/rust-lang/rust/pull/100299/)
-    , [#100325](https://github.com/rust-lang/rust/pull/100325/)
-    , [#100582](https://github.com/rust-lang/rust/pull/100582/)
-    , [#100630](https://github.com/rust-lang/rust/pull/100630/)
-    , [#101106](https://github.com/rust-lang/rust/pull/101106/)
-    , [#101204](https://github.com/rust-lang/rust/pull/101204/)
-    , [#101633](https://github.com/rust-lang/rust/pull/101633/)
-    , [#101722](https://github.com/rust-lang/rust/pull/101722/)
-    , [#101770](https://github.com/rust-lang/rust/pull/101770/)
-    , [#101914](https://github.com/rust-lang/rust/pull/101914/)
-    , [#103653](https://github.com/rust-lang/rust/pull/103653/)
-    , [#105182](https://github.com/rust-lang/rust/pull/105182/)
+[^fix_pr]: [#92860](https://github.com/rust-lang/rust/pull/92860/), [#93132](https://github.com/rust-lang/rust/pull/93132/), [#93954](https://github.com/rust-lang/rust/pull/93954/), [#97599](https://github.com/rust-lang/rust/pull/97599/), [#98053](https://github.com/rust-lang/rust/pull/98053/), [#98195](https://github.com/rust-lang/rust/pull/98195/), [#98390](https://github.com/rust-lang/rust/pull/98390/), [#98577](https://github.com/rust-lang/rust/pull/98577/), [#98611](https://github.com/rust-lang/rust/pull/98611/), [#98681](https://github.com/rust-lang/rust/pull/98681/), [#100299](https://github.com/rust-lang/rust/pull/100299/), [#100325](https://github.com/rust-lang/rust/pull/100325/), [#100582](https://github.com/rust-lang/rust/pull/100582/), [#100630](https://github.com/rust-lang/rust/pull/100630/), [#101106](https://github.com/rust-lang/rust/pull/101106/), [#101204](https://github.com/rust-lang/rust/pull/101204/), [#101633](https://github.com/rust-lang/rust/pull/101633/), [#101722](https://github.com/rust-lang/rust/pull/101722/), [#101770](https://github.com/rust-lang/rust/pull/101770/), [#101914](https://github.com/rust-lang/rust/pull/101914/), [#103653](https://github.com/rust-lang/rust/pull/103653/), [#105182](https://github.com/rust-lang/rust/pull/105182/)
 
 ## Conclusion
 
