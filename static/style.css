@@ -151,3 +151,10 @@ pre {
 .hl-constant-builtin {
     color: var(--color-code-dark-blue);
 }
+
+.draft {
+    box-shadow: 0 0 0 10px red, 0 0 0 20px yellow;
+    margin: 20px;
+    padding: 10px;
+    border-radius: 4px;
+}

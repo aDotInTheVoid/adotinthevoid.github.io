@@ -4,11 +4,18 @@
 
 {% block body %}
 
+{% if has_drafts %}
+<p class="draft">Drafts are enabled, take care</p>
+{% endif %}
+
 <h1>Alona Enraght-Moony</h1>
 
 <ul>
     {% for post in posts %}
     <li>
+        {% if post.draft %}
+        [DRAFT]
+        {% endif %}
         <a href="{{base_url | safe}}{{post.url | safe}}/">{{post.title}}</a>: {{post.date}}
     </li>
     {% endfor %}

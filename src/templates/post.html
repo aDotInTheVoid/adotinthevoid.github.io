@@ -4,12 +4,21 @@
 
 {% block body %}
 
+{% if draft %}
+<p class="draft">This is a draft, please don't share it just yet</p>
+{% endif %}
+
 <a href="{{base_url | safe}}">Home</a>
 
 <h1>{{title}}</h1>
 <p>{{date}}</p>
 
 {{content | safe}}
+
+
+{% if draft %}
+<p class="draft">This is a draft, please don't share it just yet</p>
+{% endif %}
 
 
 {% endblock %}

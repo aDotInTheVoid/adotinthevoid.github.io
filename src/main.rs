@@ -47,6 +47,7 @@ fn main() -> Result<()> {
                 url: p.path.with_extension("").to_string(),
                 date: p.date.format("%-d %B %Y").to_string(),
                 content: markdown::render(&fs::read_to_string(&p.path)?),
+                draft: p.draft,
             })
         })
         .collect::<Result<Vec<_>>>()?;
@@ -55,6 +56,7 @@ fn main() -> Result<()> {
     env.get_template("index.html")?.render_to_write(
         HomeArgs {
             posts: posts.clone(),
+            has_drafts: args.drafts,
         },
         BufWriter::new(index_file),
     )?;
@@ -73,6 +75,7 @@ fn main() -> Result<()> {
 #[derive(Serialize)]
 struct HomeArgs {
     posts: Vec<HomePostArgs>,
+    has_drafts: bool,
 }
 
 #[derive(Serialize, Clone)]
@@ -81,4 +84,5 @@ struct HomePostArgs {
     url: String,
     date: String,
     content: String,
+    draft: bool,
 }
