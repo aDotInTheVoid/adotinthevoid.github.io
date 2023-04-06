@@ -34,7 +34,7 @@ fn main() -> Result<()> {
     env.add_template("base.html", include_str!("templates/base.html"))?;
     env.add_template("index.html", include_str!("templates/index.html"))?;
     env.add_template("post.html", include_str!("templates/post.html"))?;
-    env.add_global("base_url", config.base_url);
+    env.add_global("base_url", config.base_url.clone());
     env.set_undefined_behavior(minijinja::UndefinedBehavior::Strict);
 
     let posts = config
@@ -46,7 +46,7 @@ fn main() -> Result<()> {
                 title: p.title.clone(),
                 url: p.path.with_extension("").to_string(),
                 date: p.date.format("%-d %B %Y").to_string(),
-                content: markdown::render(&fs::read_to_string(&p.path)?),
+                content: markdown::render(&config, &fs::read_to_string(&p.path)?),
                 draft: p.draft,
             })
         })

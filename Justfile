@@ -1,7 +1,7 @@
 b: build
 build:
     cargo r -- --drafts
-    cp static/* out
+    cp -r static/* out
 
 s: serve
 serve: build

@@ -4,7 +4,9 @@ use std::fmt::Write;
 use pulldown_cmark::{html, CodeBlockKind};
 use pulldown_cmark::{CowStr, Event, Options, Parser, Tag};
 
-pub fn render(input: &str) -> String {
+use crate::config::Config;
+
+pub fn render(conf: &Config, input: &str) -> String {
     let mut parser = Parser::new_ext(input, Options::all());
     let mut out = String::new();
 
@@ -40,6 +42,14 @@ pub fn render(input: &str) -> String {
                 assert_eq!(slugs.insert(slug), true, "Duplicate slug");
 
                 main_events.push(Event::Text(t));
+            }
+            Event::Start(Tag::Image(kind, link, title)) => {
+                let link = fix_link(link, conf);
+                main_events.push(Event::Start(Tag::Image(kind, link, title)))
+            }
+            Event::Start(Tag::Link(kind, link, title)) => {
+                let link = fix_link(link, conf);
+                main_events.push(Event::Start(Tag::Link(kind, link, title)))
             }
             Event::Start(Tag::CodeBlock(CodeBlockKind::Fenced(lang))) if !lang.is_empty() => {
                 let Some(Event::Text(source)) = parser.next() else {panic!()};
@@ -105,6 +115,14 @@ pub fn render(input: &str) -> String {
     out.push_str("\n</ol>\n");
 
     out
+}
+
+fn fix_link<'a>(link: CowStr<'a>, conf: &Config) -> CowStr<'a> {
+    if link.starts_with('/') {
+        CowStr::Boxed(format!("{}{}", conf.base_url, link).into_boxed_str())
+    } else {
+        link
+    }
 }
 
 fn collect_footnote<'a>(p: &mut Parser<'a, '_>) -> Vec<Event<'a>> {
