@@ -1,76 +1,21 @@
-I'm rewriting my site in RUST
+Due to Reasons (TM), I needed to rewrite my site.
 
+The old site took too long to build, and had a load of nonsense I don't realy want to
+put on display.
 
-```rust
-const FOO: &'static str = "ABCD";
+Instead of using a SSG, I just wrote it myself. It uses pulldown-cmark for markdown,
+and tree-sitter for syntax hilighting.
 
-pub fn highlight(lang: &str, source: &str) -> String {
-    let mut conf = match lang {
-        "rust" => HighlightConfiguration::new(
-            tree_sitter_rust::language(),
-            tree_sitter_rust::HIGHLIGHT_QUERY,
-            "",
-            "",
-        )
-        .unwrap(),
-        "toml" => HighlightConfiguration::new(
-            tree_sitter_toml::language(),
-            tree_sitter_toml::HIGHLIGHT_QUERY,
-            "",
-            "",
-        )
-        .unwrap(),
+## Perfect Control
 
-        _ => panic!("Unknown language: {}", lang),
-    };
+This means I can get the exact right behaviour for footnotes [^why]
 
-    let names = conf.query.capture_names().to_owned();
-    conf.configure(&names);
+[^why]: Like having backlinks that work, and errors if a footnote is referenced, but not defined.
 
-    let mut highlighter = Highlighter::new();
+I can also get headers to have links.
 
-    let highlights = highlighter
-        .highlight(&conf, source.as_bytes(), None, |_| None)
-        .unwrap();
+Also, it's now responsive to a users `prefers-color-scheme` preference.
 
-    let classes: Vec<String> = names
-        .iter()
-        .map(|n| format!("class=\"hl-{}\"", n.replace('.', "-")))
-        .collect();
+And the home page is only 8KB!
 
-    let mut html = HtmlRenderer::new();
-    html.render(highlights, source.as_bytes(), &|i| classes[i.0].as_bytes())
-        .unwrap();
-
-    String::from_utf8(html.html).unwrap()
-}
-```
-
-```toml
-[package]
-name = "alona-page"
-version = "0.1.0"
-edition = "2021"
-
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
-
-[dependencies]
-anyhow = "1.0.70"
-camino = { version = "1.1.4", features = ["serde1"] }
-chrono = { version = "0.4.24", features = ["serde"] }
-clap = { version = "4.2.1", features = ["derive"] }
-fs-err = "2.9.0"
-minijinja = "0.31.0"
-pulldown-cmark = "0.9.2"
-serde = { version = "1.0.159", features = ["derive"] }
-toml = "0.7.3"
-tree-sitter = "0.20.10"
-tree-sitter-highlight = "0.20.1"
-tree-sitter-rust = "0.20.3"
-tree-sitter-toml = "0.20.0"
-```
-
-
-*Italic Text* `Some Inline Monospace` **BOLD TEXT** ~~Strikethroug~~
-
-## Headlings
+It might even convince me to write.
