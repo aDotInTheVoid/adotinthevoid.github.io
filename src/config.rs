@@ -5,6 +5,7 @@ use serde::Deserialize;
 #[derive(Deserialize, Debug)]
 pub struct Config {
     pub base_url: String,
+    pub base_domain: String,
     pub posts: Vec<Post>,
 }
 

@@ -1,6 +1,7 @@
 mod config;
 mod highlight;
 mod markdown;
+mod rss_channel;
 
 use std::io::BufWriter;
 
@@ -8,6 +9,7 @@ use anyhow::Result;
 use camino::Utf8Path;
 use clap::Parser as _;
 use fs_err as fs;
+use rss::validation::Validate;
 use serde::Serialize;
 
 const BASE_DIR: &str = env!("CARGO_MANIFEST_DIR");
@@ -37,20 +39,14 @@ fn main() -> Result<()> {
     env.add_global("base_url", config.base_url.clone());
     env.set_undefined_behavior(minijinja::UndefinedBehavior::Strict);
 
-    let posts = config
+    let (posts, items) = config
         .posts
         .iter()
         .filter(|p| !p.draft || args.drafts)
-        .map(|p| {
-            Ok(HomePostArgs {
-                title: p.title.clone(),
-                url: p.path.with_extension("").to_string(),
-                date: p.date.format("%-d %B %Y").to_string(),
-                content: markdown::render(&config, &fs::read_to_string(&p.path)?),
-                draft: p.draft,
-            })
-        })
-        .collect::<Result<Vec<_>>>()?;
+        .map(|p| lower_post(p, &config))
+        .collect::<Result<Vec<_>>>()?
+        .into_iter()
+        .unzip::<_, _, Vec<_>, Vec<_>>();
 
     let index_file = fs::File::create(out_dir.join("index.html"))?;
     env.get_template("index.html")?.render_to_write(
@@ -69,7 +65,49 @@ fn main() -> Result<()> {
             .render_to_write(&p, BufWriter::new(post_file))?;
     }
 
+    let rss_channel = rss_channel::channel(&config, items);
+    rss_channel.validate()?;
+
+    fs::write(out_dir.join("index.xml"), rss_channel.to_string())?;
+
     Ok(())
+}
+
+fn lower_post(
+    p: &config::Post,
+    config: &config::Config,
+) -> Result<(HomePostArgs, rss::Item), anyhow::Error> {
+    let args = HomePostArgs {
+        title: p.title.clone(),
+        url: p.path.with_extension("").to_string(),
+        date: p.date.format("%-d %B %Y").to_string(),
+        content: markdown::render(&config, &fs::read_to_string(&p.path)?),
+        draft: p.draft,
+    };
+
+    let dt_2822: String = p
+        .date
+        .and_time(chrono::naive::NaiveTime::MIN)
+        .and_local_timezone(chrono::offset::Utc)
+        .unwrap()
+        .to_rfc2822();
+
+    let link = format!(
+        "https://{}{}{}",
+        config.base_domain, config.base_url, args.url
+    );
+    let item = rss::ItemBuilder::default()
+        .title(Some(p.title.clone()))
+        // .author(Some("Alona Enraght-Moony".to_string()))
+        .pub_date(Some(dt_2822))
+        .guid(Some(rss::Guid {
+            value: link.clone(),
+            permalink: true,
+        }))
+        .link(Some(link))
+        .build();
+
+    Ok((args, item))
 }
 
 #[derive(Serialize)]
