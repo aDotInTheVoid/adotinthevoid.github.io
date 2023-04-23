@@ -37,6 +37,7 @@ fn main() -> Result<()> {
     env.add_template("index.html", include_str!("templates/index.html"))?;
     env.add_template("post.html", include_str!("templates/post.html"))?;
     env.add_global("base_url", config.base_url.clone());
+    env.add_global("base_domain", config.base_domain.clone());
     env.set_undefined_behavior(minijinja::UndefinedBehavior::Strict);
 
     let (posts, items) = config

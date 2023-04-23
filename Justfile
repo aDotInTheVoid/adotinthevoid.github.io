@@ -1,5 +1,6 @@
 b: build
 build:
+    rm -rf out
     cargo r --
     cp -r static/* out
 
