@@ -18,6 +18,12 @@ const BASE_DIR: &str = env!("CARGO_MANIFEST_DIR");
 struct Args {
     #[clap(long)]
     drafts: bool,
+
+    #[clap(long)]
+    base_url: Option<String>,
+
+    #[clap(long)]
+    base_domain: Option<String>,
 }
 
 fn main() -> Result<()> {
@@ -28,6 +34,12 @@ fn main() -> Result<()> {
     let content = fs::read_to_string(base_path.join("CONTENT.toml"))?;
 
     let config: config::Config = toml::from_str(&content)?;
+
+    let config = config::Config {
+        base_url: args.base_url.unwrap_or(config.base_url),
+        base_domain: args.base_domain.unwrap_or(config.base_domain),
+        ..config
+    };
 
     let out_dir = base_path.join("out");
     fs::create_dir_all(&out_dir)?;
