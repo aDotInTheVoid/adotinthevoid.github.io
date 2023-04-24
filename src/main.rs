@@ -36,6 +36,7 @@ fn main() -> Result<()> {
     env.add_template("base.html", include_str!("templates/base.html"))?;
     env.add_template("index.html", include_str!("templates/index.html"))?;
     env.add_template("post.html", include_str!("templates/post.html"))?;
+    env.add_template("redirect.html", include_str!("templates/redirect.html"))?;
     env.add_global("base_url", config.base_url.clone());
     env.add_global("base_domain", config.base_domain.clone());
     env.set_undefined_behavior(minijinja::UndefinedBehavior::Strict);
@@ -64,6 +65,19 @@ fn main() -> Result<()> {
         let post_file = fs::File::create(post_dir.join("index.html"))?;
         env.get_template("post.html")?
             .render_to_write(&p, BufWriter::new(post_file))?;
+    }
+
+    for r in &config.redirects {
+        let dir = out_dir.join(&r.from);
+        fs::create_dir_all(&dir)?;
+        let file = fs::File::create(dir.join("index.html"))?;
+
+        let args = RedirectArgs {
+            to: format!("https://{}{}{}", config.base_domain, config.base_url, r.to),
+        };
+
+        env.get_template("redirect.html")?
+            .render_to_write(&args, BufWriter::new(file))?;
     }
 
     let rss_channel = rss_channel::channel(&config, items);
@@ -124,4 +138,9 @@ struct HomePostArgs {
     date: String,
     content: String,
     draft: bool,
+}
+
+#[derive(Serialize, Clone)]
+struct RedirectArgs {
+    to: String,
 }

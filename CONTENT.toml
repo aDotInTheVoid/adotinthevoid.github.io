@@ -16,3 +16,11 @@ date = "2022-12-31"
 title = "Metaregex: Python can be fast too"
 path = "posts/metaregex.md"
 date = "2020-05-20"
+
+[[redirects]]
+from = "posts/2022/12/rustdoc-json-in-2022/"
+to = "posts/rustdoc-json-2022/"
+
+[[redirects]]
+from = "posts/2020/05/metaregex-python-can-be-fast-too/"
+to = "posts/metaregex/"
