@@ -1,0 +1,460 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>  Metaregex: Python can be fast too  ❧ Alona Enraght-Moony   </title>
+    <link rel="icon" href="/alona.page/pfp-32.png" type="image/png">
+    <link rel="stylesheet" href="/alona.page/style.css">
+    <link href="https://adotinthevoid.github.io/alona.page/index.xml" rel="alternate" type="application/rss+xml"
+        title="Alona Enraght-Moony" />
+</head>
+
+<body>
+    
+
+
+
+<a href="/alona.page/">Home</a>
+
+<h1>Metaregex: Python can be fast too</h1>
+<p>20 May 2020</p>
+
+<p><a href="https://xkcd.com/1313/"><img src="https://imgs.xkcd.com/comics/regex_golf.png" alt="xkcd 1313" /></a>
+<sup class="footnote-reference" id="fnref:1"><a href="#fn:1">1</a></sup></p>
+<h2><a id="problem-statement" class="anchor" href="#problem-statement" aria-hidden="true"></a>Problem Statement</h2>
+<p>I wanted to try to implement this in rust as something to do during
+quarantine. Doing so lead me down a rabbit whole of profiling, optimization and
+python performance, so I thought it was worth writing about.</p>
+<p>Obviously, the first step was to see if someone had already done this someone
+else has. It turns out <a href="https://nbviewer.jupyter.org/url/norvig.com/ipython/xkcd1313.ipynb">someone has</a>, 
+and that when that person is <a href="https://en.wikipedia.org/wiki/Peter_Norvig">Peter Norvig</a>, 
+you should probably read it.</p>
+<p>I ended up basing my code around his algorithm. This means for this post to 
+make sense, you should go read his solution. In addition, it’s also a<br />
+delightful piece of algorithm design and pythonic code</p>
+<p>The challenge is to port Norvig’s python solution to rust to increase
+performance. Specificity:</p>
+<ol>
+<li>No algorithm changes. This needs to be an apples to apples comparison.</li>
+<li>No custom regex code. Norvig uses pythons regex implementation, so I will
+use the <code>regex</code> crate. This will become important later.</li>
+</ol>
+<h2><a id="naïve-port" class="anchor" href="#naïve-port" aria-hidden="true"></a>Naïve Port</h2>
+<p>Now lets get into the first version code. The story I want to tell is not of the
+initial code, but of the improvements made to it. This is just the first thing
+that worked.</p>
+<pre><code><span class="hl-keyword">use</span> itertools<span class="hl-punctuation-delimiter">::</span><span class="hl-constructor">Itertools</span><span class="hl-punctuation-delimiter">;</span>
+<span class="hl-keyword">use</span> regex<span class="hl-punctuation-delimiter">::</span><span class="hl-constructor">Regex</span><span class="hl-punctuation-delimiter">;</span>
+<span class="hl-keyword">use</span> std<span class="hl-punctuation-delimiter">::</span>collections<span class="hl-punctuation-delimiter">::</span><span class="hl-constructor">HashSet</span><span class="hl-punctuation-delimiter">;</span>
+
+<span class="hl-keyword">type</span> <span class="hl-type">Set</span><span class="hl-punctuation-bracket">&lt;</span><span class="hl-operator">&#39;</span><span class="hl-label">a</span><span class="hl-punctuation-bracket">&gt;</span> = <span class="hl-type">HashSet</span><span class="hl-punctuation-bracket">&lt;</span><span class="hl-operator">&amp;</span><span class="hl-operator">&#39;</span><span class="hl-label">a</span> <span class="hl-type-builtin">str</span><span class="hl-punctuation-bracket">&gt;</span><span class="hl-punctuation-delimiter">;</span>
+
+<span class="hl-keyword">const</span> <span class="hl-constructor">WINNERS</span><span class="hl-punctuation-delimiter">:</span> <span class="hl-operator">&amp;</span><span class="hl-type-builtin">str</span> =
+    <span class="hl-string">&quot;washington adams jefferson jefferson madison madison monroe <span class="hl-escape">\</span></span>
+<span class="hl-string"><span class="hl-escape"></span>     monroe adams jackson jackson van-buren harrison polk taylor <span class="hl-escape">\</span></span>
+<span class="hl-string"><span class="hl-escape"></span>     pierce buchanan lincoln lincoln grant grapartnt hayes garfield <span class="hl-escape">\</span></span>
+<span class="hl-string"><span class="hl-escape"></span>     cleveland harrison cleveland mckinley mckinley roosevelt taft <span class="hl-escape">\</span></span>
+<span class="hl-string"><span class="hl-escape"></span>     wilson wilson harding coolidge hoover roosevelt roosevelt <span class="hl-escape">\</span></span>
+<span class="hl-string"><span class="hl-escape"></span>     roosevelt roosevelt truman eisenhower eisenhower kennedy <span class="hl-escape">\</span></span>
+<span class="hl-string"><span class="hl-escape"></span>     johnson nixon nixon carter reagan reagan bush clinton clinton <span class="hl-escape">\</span></span>
+<span class="hl-string"><span class="hl-escape"></span>     bush bush obama obama trump&quot;</span><span class="hl-punctuation-delimiter">;</span>
+
+<span class="hl-keyword">const</span> <span class="hl-constructor">LOSERS</span><span class="hl-punctuation-delimiter">:</span> <span class="hl-operator">&amp;</span><span class="hl-type-builtin">str</span> =
+    <span class="hl-string">&quot;clinton jefferson adams pinckney pinckney clinton king adams <span class="hl-escape">\</span></span>
+<span class="hl-string"><span class="hl-escape"></span>     jackson adams clay van-buren van-buren clay cass scott fremont <span class="hl-escape">\</span></span>
+<span class="hl-string"><span class="hl-escape"></span>     breckinridge mcclellan seymour greeley tilden hancock blaine <span class="hl-escape">\</span></span>
+<span class="hl-string"><span class="hl-escape"></span>     cleveland harrison bryan bryan parker bryan roosevelt hughes <span class="hl-escape">\</span></span>
+<span class="hl-string"><span class="hl-escape"></span>     cox davis smith hoover landon willkie dewey dewey stevenson <span class="hl-escape">\</span></span>
+<span class="hl-string"><span class="hl-escape"></span>     stevenson nixon goldwater humphrey mcgovern ford carter <span class="hl-escape">\</span></span>
+<span class="hl-string"><span class="hl-escape"></span>     mondale dukakis bush dole gore kerry mccain romney clinton&quot;</span><span class="hl-punctuation-delimiter">;</span>
+
+<span class="hl-keyword">const</span> <span class="hl-constructor">START</span><span class="hl-punctuation-delimiter">:</span> <span class="hl-type-builtin">u8</span> = <span class="hl-string">b&#39;^&#39;</span><span class="hl-punctuation-delimiter">;</span>
+<span class="hl-keyword">const</span> <span class="hl-constructor">DOT</span><span class="hl-punctuation-delimiter">:</span> <span class="hl-type-builtin">u8</span> = <span class="hl-string">b&#39;.&#39;</span><span class="hl-punctuation-delimiter">;</span>
+<span class="hl-keyword">const</span> <span class="hl-constructor">END</span><span class="hl-punctuation-delimiter">:</span> <span class="hl-type-builtin">u8</span> = <span class="hl-string">b&#39;$&#39;</span><span class="hl-punctuation-delimiter">;</span>
+</code></pre>
+<p>Things to note here:</p>
+<ol>
+<li>I’ve added new winners and looser to reflect the election status at the time
+of writing</li>
+<li>I’ve used the <a href="https://docs.rs/itertools/0.9.0/itertools/"><code>Itertools</code></a> crate
+for the
+<a href="https://docs.rs/itertools/0.9.0/itertools/trait.Itertools.html#method.cartesian_product"><code>cartesian_product</code></a>
+method</li>
+</ol>
+<pre><code><span class="hl-keyword">pub</span> <span class="hl-keyword">fn</span> <span class="hl-function">main</span><span class="hl-punctuation-bracket">(</span><span class="hl-punctuation-bracket">)</span> <span class="hl-punctuation-bracket">{</span>
+    <span class="hl-keyword">let</span> <span class="hl-keyword">mut</span> winners<span class="hl-punctuation-delimiter">:</span> <span class="hl-type">HashSet</span><span class="hl-punctuation-bracket">&lt;</span><span class="hl-type">_</span><span class="hl-punctuation-bracket">&gt;</span> =
+        <span class="hl-constructor">WINNERS</span><span class="hl-punctuation-delimiter">.</span><span class="hl-function-method">split_whitespace</span><span class="hl-punctuation-bracket">(</span><span class="hl-punctuation-bracket">)</span><span class="hl-punctuation-delimiter">.</span><span class="hl-function-method">collect</span><span class="hl-punctuation-bracket">(</span><span class="hl-punctuation-bracket">)</span><span class="hl-punctuation-delimiter">;</span>
+    <span class="hl-keyword">let</span> <span class="hl-keyword">mut</span> losers<span class="hl-punctuation-delimiter">:</span> <span class="hl-type">HashSet</span><span class="hl-punctuation-bracket">&lt;</span><span class="hl-type">_</span><span class="hl-punctuation-bracket">&gt;</span> = <span class="hl-constructor">LOSERS</span>
+        <span class="hl-punctuation-delimiter">.</span><span class="hl-function-method">split_whitespace</span><span class="hl-punctuation-bracket">(</span><span class="hl-punctuation-bracket">)</span>
+        <span class="hl-punctuation-delimiter">.</span><span class="hl-function-method">collect</span><span class="hl-punctuation-delimiter">::</span><span class="hl-punctuation-bracket">&lt;</span><span class="hl-type">Set</span><span class="hl-punctuation-bracket">&gt;</span><span class="hl-punctuation-bracket">(</span><span class="hl-punctuation-bracket">)</span>
+        <span class="hl-punctuation-delimiter">.</span><span class="hl-function-method">difference</span><span class="hl-punctuation-bracket">(</span><span class="hl-operator">&amp;</span>winners<span class="hl-punctuation-bracket">)</span>
+        <span class="hl-punctuation-delimiter">.</span><span class="hl-function-method">map</span><span class="hl-punctuation-bracket">(</span>|x| <span class="hl-operator">*</span>x<span class="hl-punctuation-bracket">)</span>
+        <span class="hl-punctuation-delimiter">.</span><span class="hl-function-method">collect</span><span class="hl-punctuation-delimiter">::</span><span class="hl-punctuation-bracket">&lt;</span><span class="hl-type">HashSet</span><span class="hl-punctuation-bracket">&lt;</span><span class="hl-type">_</span><span class="hl-punctuation-bracket">&gt;</span><span class="hl-punctuation-bracket">&gt;</span><span class="hl-punctuation-bracket">(</span><span class="hl-punctuation-bracket">)</span><span class="hl-punctuation-delimiter">;</span>
+
+    losers<span class="hl-punctuation-delimiter">.</span><span class="hl-function-method">insert</span><span class="hl-punctuation-bracket">(</span><span class="hl-string">&quot;fillmore&quot;</span><span class="hl-punctuation-bracket">)</span><span class="hl-punctuation-delimiter">;</span>
+    losers<span class="hl-punctuation-delimiter">.</span><span class="hl-function-method">remove</span><span class="hl-punctuation-bracket">(</span><span class="hl-string">&quot;fremont&quot;</span><span class="hl-punctuation-bracket">)</span><span class="hl-punctuation-delimiter">;</span>
+
+    <span class="hl-function-macro">println</span><span class="hl-function-macro">!</span><span class="hl-punctuation-bracket">(</span><span class="hl-string">&quot;{}&quot;</span>, find_regex<span class="hl-punctuation-bracket">(</span>&amp;<span class="hl-keyword">mut</span> winners, &amp;losers<span class="hl-punctuation-bracket">)</span><span class="hl-punctuation-bracket">)</span><span class="hl-punctuation-delimiter">;</span>
+<span class="hl-punctuation-bracket">}</span>
+</code></pre>
+<p>The main function is quite unwieldy for what it needs to do. We need to use the
+<a href="https://doc.rust-lang.org/stable/std/collections/hash_set/struct.HashSet.html#method.difference"><code>difference</code></a>
+method as <a href="https://doc.rust-lang.org/stable/std/collections/hash_set/struct.HashSet.html#impl-Sub%3C%26%27_%20HashSet%3CT%2C%20S%3E%3E"><code>Sub&lt;HashSet&gt; for &amp;HashSet</code></a>
+requires the elements to be <code>Clone</code>.</p>
+<p>Additionally <code>difference</code> returns an iterator of references, but as the original
+Set had <code>&amp;str</code> the item is now <code>&amp;&amp;str</code> so we need to dereference it before we
+collect to a Set.</p>
+<pre><code><span class="hl-keyword">fn</span> <span class="hl-function">find_regex</span><span class="hl-punctuation-bracket">(</span><span class="hl-variable-parameter">winners</span><span class="hl-punctuation-delimiter">:</span> <span class="hl-operator">&amp;</span><span class="hl-keyword">mut</span> <span class="hl-type">Set</span><span class="hl-punctuation-delimiter">,</span> <span class="hl-variable-parameter">losers</span><span class="hl-punctuation-delimiter">:</span> <span class="hl-operator">&amp;</span><span class="hl-type">Set</span><span class="hl-punctuation-bracket">)</span> -&gt; <span class="hl-type">String</span> <span class="hl-punctuation-bracket">{</span>
+    <span class="hl-keyword">let</span> <span class="hl-keyword">mut</span> pool<span class="hl-punctuation-delimiter">:</span> <span class="hl-type">HashSet</span><span class="hl-punctuation-bracket">&lt;</span><span class="hl-type">_</span><span class="hl-punctuation-bracket">&gt;</span> =
+        <span class="hl-function">regex_parts</span><span class="hl-punctuation-bracket">(</span><span class="hl-operator">&amp;</span>winners<span class="hl-punctuation-delimiter">,</span> <span class="hl-operator">&amp;</span>losers<span class="hl-punctuation-bracket">)</span><span class="hl-punctuation-delimiter">.</span><span class="hl-function-method">collect</span><span class="hl-punctuation-bracket">(</span><span class="hl-punctuation-bracket">)</span><span class="hl-punctuation-delimiter">;</span>
+    <span class="hl-keyword">let</span> <span class="hl-keyword">mut</span> solutions<span class="hl-punctuation-delimiter">:</span> <span class="hl-type">Vec</span><span class="hl-punctuation-bracket">&lt;</span><span class="hl-type">String</span><span class="hl-punctuation-bracket">&gt;</span> = <span class="hl-function-macro">vec</span><span class="hl-function-macro">!</span><span class="hl-punctuation-bracket">[</span><span class="hl-punctuation-bracket">]</span><span class="hl-punctuation-delimiter">;</span>
+    <span class="hl-comment">// Iterate until we match all winners</span>
+    <span class="hl-keyword">while</span> winners<span class="hl-punctuation-delimiter">.</span><span class="hl-function-method">len</span><span class="hl-punctuation-bracket">(</span><span class="hl-punctuation-bracket">)</span> != <span class="hl-constant-builtin">0</span> <span class="hl-punctuation-bracket">{</span>
+        <span class="hl-comment">// Select best candidate from pool</span>
+        <span class="hl-keyword">let</span> best = pool<span class="hl-punctuation-delimiter">.</span><span class="hl-function-method">iter</span><span class="hl-punctuation-bracket">(</span><span class="hl-punctuation-bracket">)</span><span class="hl-punctuation-delimiter">.</span><span class="hl-function-method">max_by_key</span><span class="hl-punctuation-bracket">(</span>|pat| <span class="hl-punctuation-bracket">{</span>
+            <span class="hl-constant-builtin">4</span> <span class="hl-operator">*</span> <span class="hl-function">matches</span><span class="hl-punctuation-bracket">(</span>pat<span class="hl-punctuation-delimiter">,</span> winners<span class="hl-punctuation-delimiter">.</span><span class="hl-function-method">iter</span><span class="hl-punctuation-bracket">(</span><span class="hl-punctuation-bracket">)</span><span class="hl-punctuation-delimiter">.</span><span class="hl-function-method">map</span><span class="hl-punctuation-bracket">(</span>|<span class="hl-operator">&amp;</span>x| x<span class="hl-punctuation-bracket">)</span><span class="hl-punctuation-bracket">)</span><span class="hl-punctuation-delimiter">.</span><span class="hl-function-method">count</span><span class="hl-punctuation-bracket">(</span><span class="hl-punctuation-bracket">)</span>
+                <span class="hl-keyword">as</span> <span class="hl-type-builtin">i64</span>
+                - pat<span class="hl-punctuation-delimiter">.</span><span class="hl-function-method">len</span><span class="hl-punctuation-bracket">(</span><span class="hl-punctuation-bracket">)</span> <span class="hl-keyword">as</span> <span class="hl-type-builtin">i64</span>
+        <span class="hl-punctuation-bracket">}</span><span class="hl-punctuation-bracket">)</span><span class="hl-punctuation-delimiter">;</span>
+        <span class="hl-comment">// Candidate may be none, so we need to handle that</span>
+        <span class="hl-keyword">if</span> <span class="hl-keyword">let</span> <span class="hl-constructor">Some</span><span class="hl-punctuation-bracket">(</span>best_part<span class="hl-punctuation-bracket">)</span> = best <span class="hl-punctuation-bracket">{</span>
+            <span class="hl-comment">// Add to solutions</span>
+            solutions<span class="hl-punctuation-delimiter">.</span><span class="hl-function-method">push</span><span class="hl-punctuation-bracket">(</span>best_part<span class="hl-punctuation-delimiter">.</span><span class="hl-function-method">clone</span><span class="hl-punctuation-bracket">(</span><span class="hl-punctuation-bracket">)</span><span class="hl-punctuation-bracket">)</span><span class="hl-punctuation-delimiter">;</span>
+            <span class="hl-comment">// Remove entries matched by new regex</span>
+            winners<span class="hl-punctuation-delimiter">.</span><span class="hl-function-method">retain</span><span class="hl-punctuation-bracket">(</span>|entry| <span class="hl-punctuation-bracket">{</span>
+                !<span class="hl-type">Regex</span><span class="hl-punctuation-delimiter">::</span><span class="hl-function">new</span><span class="hl-punctuation-bracket">(</span>best_part<span class="hl-punctuation-bracket">)</span><span class="hl-punctuation-delimiter">.</span><span class="hl-function-method">unwrap</span><span class="hl-punctuation-bracket">(</span><span class="hl-punctuation-bracket">)</span><span class="hl-punctuation-delimiter">.</span><span class="hl-function-method">is_match</span><span class="hl-punctuation-bracket">(</span>entry<span class="hl-punctuation-bracket">)</span>
+            <span class="hl-punctuation-bracket">}</span><span class="hl-punctuation-bracket">)</span><span class="hl-punctuation-delimiter">;</span>
+            <span class="hl-comment">// Remove regex&#39;s that no longer match anything</span>
+            pool<span class="hl-punctuation-delimiter">.</span><span class="hl-function-method">retain</span><span class="hl-punctuation-bracket">(</span>|pattern| <span class="hl-punctuation-bracket">{</span>
+                <span class="hl-function">matches</span><span class="hl-punctuation-bracket">(</span>pattern<span class="hl-punctuation-delimiter">,</span> winners<span class="hl-punctuation-delimiter">.</span><span class="hl-function-method">iter</span><span class="hl-punctuation-bracket">(</span><span class="hl-punctuation-bracket">)</span><span class="hl-punctuation-delimiter">.</span><span class="hl-function-method">map</span><span class="hl-punctuation-bracket">(</span>|<span class="hl-operator">&amp;</span>x| x<span class="hl-punctuation-bracket">)</span><span class="hl-punctuation-bracket">)</span>
+                    <span class="hl-punctuation-delimiter">.</span><span class="hl-function-method">next</span><span class="hl-punctuation-bracket">(</span><span class="hl-punctuation-bracket">)</span>
+                    <span class="hl-punctuation-delimiter">.</span><span class="hl-function-method">is_some</span><span class="hl-punctuation-bracket">(</span><span class="hl-punctuation-bracket">)</span>
+            <span class="hl-punctuation-bracket">}</span><span class="hl-punctuation-bracket">)</span><span class="hl-punctuation-delimiter">;</span>
+        <span class="hl-punctuation-bracket">}</span> <span class="hl-keyword">else</span> <span class="hl-punctuation-bracket">{</span>
+            <span class="hl-function-macro">eprintln</span><span class="hl-function-macro">!</span><span class="hl-punctuation-bracket">(</span><span class="hl-string">&quot;I don&#39;t think it can be done&quot;</span><span class="hl-punctuation-bracket">)</span><span class="hl-punctuation-delimiter">;</span>
+        <span class="hl-punctuation-bracket">}</span>
+    <span class="hl-punctuation-bracket">}</span>
+    solutions<span class="hl-punctuation-delimiter">.</span><span class="hl-function-method">join</span><span class="hl-punctuation-bracket">(</span><span class="hl-string">&quot;|&quot;</span><span class="hl-punctuation-bracket">)</span>
+<span class="hl-punctuation-bracket">}</span>
+</code></pre>
+<p>This mainloop works fairly well. We keep adding the best solution, and then use
+<a href="https://doc.rust-lang.org/stable/std/collections/hash_set/struct.HashSet.html#method.retain"><code>retain</code></a>
+to remove matched winners and patterns that no longer match.</p>
+<p>One interesting thing is in the fitness function (the closure inside
+<code>max_by_key</code>) we need to convert to a signed integer, otherwise the length will
+underflow and we end up with</p>
+<pre><code>^taft$|^bush$|^polk$|^obama$|^hayes$|^trump$|^nixon$|^adams$|^grant$
+|^truman$|^taylor$|^monroe$|^wilson$|^carter$|^hoover$|^pierce$
+|^reagan$|^lincoln$|^harding$|^jackson$|^kennedy$|^madison$|^johnson$
+|^clinton$|^coolidge$|^buchanan$|^harrison$|^garfield$|^mckinley$
+|^cleveland$|^grapartnt$|^roosevelt$|^van-buren$|^jefferson$
+|^eisenhower$|^washington$`
+</code></pre>
+<pre><code><span class="hl-keyword">fn</span> <span class="hl-function">regex_parts</span><span class="hl-punctuation-bracket">&lt;</span><span class="hl-operator">&#39;</span><span class="hl-label">a</span><span class="hl-punctuation-bracket">&gt;</span><span class="hl-punctuation-bracket">(</span>
+    <span class="hl-variable-parameter">winners</span><span class="hl-punctuation-delimiter">:</span> <span class="hl-operator">&amp;</span><span class="hl-operator">&#39;</span><span class="hl-label">a</span> <span class="hl-type">Set</span><span class="hl-punctuation-bracket">&lt;</span><span class="hl-operator">&#39;</span><span class="hl-label">a</span><span class="hl-punctuation-bracket">&gt;</span><span class="hl-punctuation-delimiter">,</span>
+    <span class="hl-variable-parameter">losers</span><span class="hl-punctuation-delimiter">:</span> <span class="hl-operator">&amp;</span><span class="hl-operator">&#39;</span><span class="hl-label">a</span> <span class="hl-type">Set</span><span class="hl-punctuation-bracket">&lt;</span><span class="hl-operator">&#39;</span><span class="hl-label">a</span><span class="hl-punctuation-bracket">&gt;</span>
+<span class="hl-punctuation-bracket">)</span> -&gt; <span class="hl-keyword">impl</span> <span class="hl-type">Iterator</span><span class="hl-punctuation-bracket">&lt;</span><span class="hl-type">Item</span> = <span class="hl-type">String</span><span class="hl-punctuation-bracket">&gt;</span> + <span class="hl-operator">&#39;</span><span class="hl-label">a</span> <span class="hl-punctuation-bracket">{</span>
+    <span class="hl-keyword">let</span> whole = winners<span class="hl-punctuation-delimiter">.</span><span class="hl-function-method">iter</span><span class="hl-punctuation-bracket">(</span><span class="hl-punctuation-bracket">)</span><span class="hl-punctuation-delimiter">.</span><span class="hl-function-method">map</span><span class="hl-punctuation-bracket">(</span>|x| <span class="hl-function-macro">format</span><span class="hl-function-macro">!</span><span class="hl-punctuation-bracket">(</span><span class="hl-string">&quot;^{}$&quot;</span>, x<span class="hl-punctuation-bracket">)</span><span class="hl-punctuation-bracket">)</span><span class="hl-punctuation-delimiter">;</span>
+    <span class="hl-keyword">let</span> parts = whole
+        <span class="hl-punctuation-delimiter">.</span><span class="hl-function-method">clone</span><span class="hl-punctuation-bracket">(</span><span class="hl-punctuation-bracket">)</span>
+        <span class="hl-punctuation-delimiter">.</span><span class="hl-function-method">flat_map</span><span class="hl-punctuation-bracket">(</span>subparts<span class="hl-punctuation-bracket">)</span>
+        <span class="hl-punctuation-delimiter">.</span><span class="hl-function-method">flat_map</span><span class="hl-punctuation-bracket">(</span>dotify<span class="hl-punctuation-bracket">)</span>
+        <span class="hl-punctuation-delimiter">.</span><span class="hl-function-method">filter</span><span class="hl-punctuation-bracket">(</span><span class="hl-keyword">move</span> |part| <span class="hl-punctuation-bracket">{</span>
+            losers
+                <span class="hl-punctuation-delimiter">.</span><span class="hl-function-method">iter</span><span class="hl-punctuation-bracket">(</span><span class="hl-punctuation-bracket">)</span>
+                <span class="hl-punctuation-delimiter">.</span><span class="hl-function-method">all</span><span class="hl-punctuation-bracket">(</span>|loser| !<span class="hl-type">Regex</span><span class="hl-punctuation-delimiter">::</span><span class="hl-function">new</span><span class="hl-punctuation-bracket">(</span>part<span class="hl-punctuation-bracket">)</span><span class="hl-punctuation-delimiter">.</span><span class="hl-function-method">unwrap</span><span class="hl-punctuation-bracket">(</span><span class="hl-punctuation-bracket">)</span><span class="hl-punctuation-delimiter">.</span><span class="hl-function-method">is_match</span><span class="hl-punctuation-bracket">(</span>loser<span class="hl-punctuation-bracket">)</span><span class="hl-punctuation-bracket">)</span>
+        <span class="hl-punctuation-bracket">}</span><span class="hl-punctuation-bracket">)</span><span class="hl-punctuation-delimiter">;</span>
+    whole<span class="hl-punctuation-delimiter">.</span><span class="hl-function-method">chain</span><span class="hl-punctuation-bracket">(</span>parts<span class="hl-punctuation-bracket">)</span>
+<span class="hl-punctuation-bracket">}</span>
+</code></pre>
+<p>This is relay nice. We can use
+<a href="https://doc.rust-lang.org/stable/std/iter/trait.Iterator.html#method.flat_map"><code>flat_map</code></a>
+to first expand every winner into their subparts and then expand the subparts
+into all the dotted versions. Then a filter to check that they don’t match any
+losers ensures all the parts will work.</p>
+<pre><code><span class="hl-keyword">fn</span> <span class="hl-function">dotify</span><span class="hl-punctuation-bracket">(</span><span class="hl-variable-parameter">word</span><span class="hl-punctuation-delimiter">:</span> <span class="hl-type">String</span><span class="hl-punctuation-bracket">)</span> -&gt; <span class="hl-keyword">impl</span> <span class="hl-type">Iterator</span><span class="hl-punctuation-bracket">&lt;</span><span class="hl-type">Item</span> = <span class="hl-type">String</span><span class="hl-punctuation-bracket">&gt;</span> <span class="hl-punctuation-bracket">{</span>
+    <span class="hl-keyword">let</span> has_front = <span class="hl-punctuation-bracket">(</span>word<span class="hl-punctuation-delimiter">.</span><span class="hl-function-method">as_bytes</span><span class="hl-punctuation-bracket">(</span><span class="hl-punctuation-bracket">)</span><span class="hl-punctuation-bracket">[</span><span class="hl-constant-builtin">0</span><span class="hl-punctuation-bracket">]</span> == <span class="hl-constructor">START</span><span class="hl-punctuation-bracket">)</span> <span class="hl-keyword">as</span> <span class="hl-type-builtin">usize</span><span class="hl-punctuation-delimiter">;</span>
+    <span class="hl-keyword">let</span> has_end = <span class="hl-punctuation-bracket">(</span>word<span class="hl-punctuation-delimiter">.</span><span class="hl-function-method">as_bytes</span><span class="hl-punctuation-bracket">(</span><span class="hl-punctuation-bracket">)</span><span class="hl-punctuation-bracket">[</span>word<span class="hl-punctuation-delimiter">.</span><span class="hl-function-method">len</span><span class="hl-punctuation-bracket">(</span><span class="hl-punctuation-bracket">)</span> - <span class="hl-constant-builtin">1</span><span class="hl-punctuation-bracket">]</span> == <span class="hl-constructor">END</span><span class="hl-punctuation-bracket">)</span> <span class="hl-keyword">as</span> <span class="hl-type-builtin">usize</span><span class="hl-punctuation-delimiter">;</span>
+    <span class="hl-keyword">let</span> len = word<span class="hl-punctuation-delimiter">.</span><span class="hl-function-method">len</span><span class="hl-punctuation-bracket">(</span><span class="hl-punctuation-bracket">)</span> - has_front - has_end<span class="hl-punctuation-delimiter">;</span>
+    <span class="hl-punctuation-bracket">(</span><span class="hl-constant-builtin">0</span>..<span class="hl-constant-builtin">2_usize</span><span class="hl-punctuation-delimiter">.</span><span class="hl-function-method">pow</span><span class="hl-punctuation-bracket">(</span>len <span class="hl-keyword">as</span> <span class="hl-type-builtin">u32</span><span class="hl-punctuation-bracket">)</span><span class="hl-punctuation-bracket">)</span>
+        <span class="hl-punctuation-delimiter">.</span><span class="hl-function-method">map</span><span class="hl-punctuation-bracket">(</span><span class="hl-keyword">move</span> |x| x &lt;&lt; has_front<span class="hl-punctuation-bracket">)</span>
+        <span class="hl-punctuation-delimiter">.</span><span class="hl-function-method">map</span><span class="hl-punctuation-bracket">(</span><span class="hl-keyword">move</span> |n| <span class="hl-function">get_dots</span><span class="hl-punctuation-bracket">(</span><span class="hl-operator">&amp;</span>word<span class="hl-punctuation-delimiter">,</span> n<span class="hl-punctuation-bracket">)</span><span class="hl-punctuation-bracket">)</span>
+<span class="hl-punctuation-bracket">}</span>
+
+<span class="hl-keyword">fn</span> <span class="hl-function">get_dots</span><span class="hl-punctuation-bracket">(</span><span class="hl-variable-parameter">word</span><span class="hl-punctuation-delimiter">:</span> <span class="hl-operator">&amp;</span><span class="hl-type-builtin">str</span><span class="hl-punctuation-delimiter">,</span> <span class="hl-variable-parameter">n</span><span class="hl-punctuation-delimiter">:</span> <span class="hl-type-builtin">usize</span><span class="hl-punctuation-bracket">)</span> -&gt; <span class="hl-type">String</span> <span class="hl-punctuation-bracket">{</span>
+    <span class="hl-keyword">let</span> <span class="hl-keyword">mut</span> tmp = word<span class="hl-punctuation-delimiter">.</span><span class="hl-function-method">to_string</span><span class="hl-punctuation-bracket">(</span><span class="hl-punctuation-bracket">)</span><span class="hl-punctuation-delimiter">;</span>
+    <span class="hl-function">set_dots</span><span class="hl-punctuation-bracket">(</span><span class="hl-operator">&amp;</span><span class="hl-keyword">mut</span> tmp<span class="hl-punctuation-delimiter">,</span> n<span class="hl-punctuation-bracket">)</span><span class="hl-punctuation-delimiter">;</span>
+    tmp
+<span class="hl-punctuation-bracket">}</span>
+
+<span class="hl-keyword">fn</span> <span class="hl-function">set_dots</span><span class="hl-punctuation-bracket">(</span><span class="hl-variable-parameter">word</span><span class="hl-punctuation-delimiter">:</span> <span class="hl-operator">&amp;</span><span class="hl-keyword">mut</span> <span class="hl-type-builtin">str</span><span class="hl-punctuation-delimiter">,</span> <span class="hl-variable-parameter">n</span><span class="hl-punctuation-delimiter">:</span> <span class="hl-type-builtin">usize</span><span class="hl-punctuation-bracket">)</span> <span class="hl-punctuation-bracket">{</span>
+    <span class="hl-function-macro">assert</span><span class="hl-function-macro">!</span><span class="hl-punctuation-bracket">(</span>word.is_ascii<span class="hl-punctuation-bracket">(</span><span class="hl-punctuation-bracket">)</span>, <span class="hl-string">&quot;Not ascii, cant do dots&quot;</span><span class="hl-punctuation-bracket">)</span><span class="hl-punctuation-delimiter">;</span>
+    <span class="hl-keyword">for</span> i <span class="hl-keyword">in</span> <span class="hl-constant-builtin">0</span>..word<span class="hl-punctuation-delimiter">.</span><span class="hl-function-method">len</span><span class="hl-punctuation-bracket">(</span><span class="hl-punctuation-bracket">)</span> <span class="hl-punctuation-bracket">{</span>
+        <span class="hl-keyword">if</span> <span class="hl-punctuation-bracket">(</span><span class="hl-punctuation-bracket">(</span>n &gt;&gt; i<span class="hl-punctuation-bracket">)</span> <span class="hl-operator">&amp;</span> <span class="hl-constant-builtin">1</span><span class="hl-punctuation-bracket">)</span> != <span class="hl-constant-builtin">0</span> <span class="hl-punctuation-bracket">{</span>
+            <span class="hl-comment">// Safety: The thing is all ascii, so we</span>
+            <span class="hl-comment">//         will maintain utf-8 invariance</span>
+            <span class="hl-keyword">unsafe</span> <span class="hl-punctuation-bracket">{</span>
+                word<span class="hl-punctuation-delimiter">.</span><span class="hl-function-method">as_bytes_mut</span><span class="hl-punctuation-bracket">(</span><span class="hl-punctuation-bracket">)</span><span class="hl-punctuation-bracket">[</span>i<span class="hl-punctuation-bracket">]</span> = <span class="hl-constructor">DOT</span><span class="hl-punctuation-delimiter">;</span>
+            <span class="hl-punctuation-bracket">}</span>
+        <span class="hl-punctuation-bracket">}</span>
+    <span class="hl-punctuation-bracket">}</span>
+<span class="hl-punctuation-bracket">}</span>
+</code></pre>
+<p>The dotification is surprisingly complex. We use <code>set_dots</code> to use a number to
+encode which characters are to be turned to dots. Changing them actually
+requires <code>unsafe</code> as UTF-8 means if we tried to do it in the middle of an emoji
+or other multi-byte character, we’d end up with invalid unicode, so we use an
+assert to ensure this doesn’t happen. </p>
+<p><code>get_dots</code> is a simple wrapper around <code>set_dots</code> that deals with the string allocation.</p>
+<p><code>dotify</code> creates an iterator such that <code>^</code> and <code>$</code> are preserved and dotifys the rest</p>
+<pre><code><span class="hl-keyword">fn</span> <span class="hl-function">subparts</span><span class="hl-punctuation-bracket">(</span><span class="hl-variable-parameter">word</span><span class="hl-punctuation-delimiter">:</span> <span class="hl-type">String</span><span class="hl-punctuation-bracket">)</span> -&gt; <span class="hl-keyword">impl</span> <span class="hl-type">Iterator</span><span class="hl-punctuation-bracket">&lt;</span><span class="hl-type">Item</span> = <span class="hl-type">String</span><span class="hl-punctuation-bracket">&gt;</span> <span class="hl-punctuation-bracket">{</span>
+    <span class="hl-keyword">let</span> len = word<span class="hl-punctuation-delimiter">.</span><span class="hl-function-method">len</span><span class="hl-punctuation-bracket">(</span><span class="hl-punctuation-bracket">)</span><span class="hl-punctuation-delimiter">;</span>
+    <span class="hl-punctuation-bracket">(</span><span class="hl-constant-builtin">0</span>..=len<span class="hl-punctuation-bracket">)</span>
+        <span class="hl-punctuation-delimiter">.</span><span class="hl-function-method">cartesian_product</span><span class="hl-punctuation-bracket">(</span><span class="hl-constant-builtin">1</span>..<span class="hl-constant-builtin">5</span><span class="hl-punctuation-bracket">)</span>
+        <span class="hl-punctuation-delimiter">.</span><span class="hl-function-method">map</span><span class="hl-punctuation-bracket">(</span>|<span class="hl-punctuation-bracket">(</span>start<span class="hl-punctuation-delimiter">,</span> offset<span class="hl-punctuation-bracket">)</span>| <span class="hl-punctuation-bracket">(</span>start<span class="hl-punctuation-delimiter">,</span> start + offset<span class="hl-punctuation-bracket">)</span><span class="hl-punctuation-bracket">)</span>
+        <span class="hl-punctuation-delimiter">.</span><span class="hl-function-method">filter</span><span class="hl-punctuation-bracket">(</span><span class="hl-keyword">move</span> |<span class="hl-punctuation-bracket">(</span>_<span class="hl-punctuation-delimiter">,</span> end<span class="hl-punctuation-bracket">)</span>| <span class="hl-operator">*</span>end &lt;= len<span class="hl-punctuation-bracket">)</span>
+        <span class="hl-punctuation-delimiter">.</span><span class="hl-function-method">map</span><span class="hl-punctuation-bracket">(</span><span class="hl-keyword">move</span> |<span class="hl-punctuation-bracket">(</span>start<span class="hl-punctuation-delimiter">,</span> end<span class="hl-punctuation-bracket">)</span>| word<span class="hl-punctuation-bracket">[</span>start..end<span class="hl-punctuation-bracket">]</span><span class="hl-punctuation-delimiter">.</span><span class="hl-function-method">to_owned</span><span class="hl-punctuation-bracket">(</span><span class="hl-punctuation-bracket">)</span><span class="hl-punctuation-bracket">)</span>
+<span class="hl-punctuation-bracket">}</span>
+
+<span class="hl-keyword">fn</span> <span class="hl-function">matches</span><span class="hl-punctuation-bracket">&lt;</span><span class="hl-operator">&#39;</span><span class="hl-label">a</span><span class="hl-punctuation-bracket">&gt;</span><span class="hl-punctuation-bracket">(</span>
+    <span class="hl-variable-parameter">r</span><span class="hl-punctuation-delimiter">:</span> <span class="hl-operator">&amp;</span><span class="hl-type">String</span><span class="hl-punctuation-delimiter">,</span>
+    <span class="hl-variable-parameter">strs</span><span class="hl-punctuation-delimiter">:</span> <span class="hl-keyword">impl</span> <span class="hl-type">Iterator</span><span class="hl-punctuation-bracket">&lt;</span><span class="hl-type">Item</span> = <span class="hl-operator">&amp;</span><span class="hl-operator">&#39;</span><span class="hl-label">a</span> <span class="hl-type-builtin">str</span><span class="hl-punctuation-bracket">&gt;</span> + <span class="hl-operator">&#39;</span><span class="hl-label">a</span><span class="hl-punctuation-delimiter">,</span>
+<span class="hl-punctuation-bracket">)</span> -&gt; <span class="hl-keyword">impl</span> <span class="hl-type">Iterator</span><span class="hl-punctuation-bracket">&lt;</span><span class="hl-type">Item</span> = <span class="hl-operator">&amp;</span><span class="hl-operator">&#39;</span><span class="hl-label">a</span> <span class="hl-type-builtin">str</span><span class="hl-punctuation-bracket">&gt;</span> + <span class="hl-operator">&#39;</span><span class="hl-label">a</span> <span class="hl-punctuation-bracket">{</span>
+    <span class="hl-keyword">let</span> re = <span class="hl-type">Regex</span><span class="hl-punctuation-delimiter">::</span><span class="hl-function">new</span><span class="hl-punctuation-bracket">(</span>r<span class="hl-punctuation-bracket">)</span><span class="hl-punctuation-delimiter">.</span><span class="hl-function-method">unwrap</span><span class="hl-punctuation-bracket">(</span><span class="hl-punctuation-bracket">)</span><span class="hl-punctuation-delimiter">;</span>
+    strs<span class="hl-punctuation-delimiter">.</span><span class="hl-function-method">filter</span><span class="hl-punctuation-bracket">(</span><span class="hl-keyword">move</span> |s| re<span class="hl-punctuation-delimiter">.</span><span class="hl-function-method">is_match</span><span class="hl-punctuation-bracket">(</span>s<span class="hl-punctuation-bracket">)</span><span class="hl-punctuation-bracket">)</span>
+<span class="hl-punctuation-bracket">}</span>
+</code></pre>
+<p>Finally a few helper methods.</p>
+<p>If your not sure what any of these these functions do, <a href="https://play.rust-lang.org/?version=stable&amp;mode=release&amp;edition=2018&amp;gist=e1f00ce619be19cb8da4b2b57268d9a5">the tests are here</a>.</p>
+<p>This code is not well optimized. Regexes are being compiled only to be used once
+and theirs a lot of string allocation. However untuned rust code has
+<a href="https://youtu.be/HgtRAbE1nBM?t=2573">been</a>
+<a href="http://dtrace.org/blogs/bmc/2018/09/18/falling-in-love-with-rust/">known</a> to
+beat c, so I should beat norvig’s python, right?</p>
+<pre><code>$ hyperfine out/v1_naive
+Time (mean ± σ):    2.426s ± 0.070s [User: 2.420s, System: 0.001s]
+Range (min … max):  2.227s … 2.692s 500 runs
+
+$ hyperfine python norvig.py 
+Time (mean ± σ):    1.186 s ± 0.013 s  [User: 1.179s, System: 0.003s]
+Range (min … max):  1.161 s … 1.252 s  500 runs
+</code></pre>
+<p><sup class="footnote-reference" id="fnref:2"><a href="#fn:2">2</a></sup></p>
+<p>How could this have happened. Well Norvig’s code (probably) spends most of it’s
+time not in interpreting python but in regex and set operators. Both of these
+are written in c. So the performance will actually be competitive.</p>
+<h2><a id="cheep-tricks" class="anchor" href="#cheep-tricks" aria-hidden="true"></a>Cheep tricks</h2>
+<p>Going throught <a href="https://deterministic.space/high-performance-rust.html">the cheep tricks</a>, we add</p>
+<pre><code><span class="hl-punctuation-bracket">[</span><span class="hl-property">profile</span><span class="hl-punctuation-delimiter">.</span><span class="hl-property">release</span><span class="hl-punctuation-bracket">]</span>
+<span class="hl-property">lto</span> <span class="hl-operator">=</span> <span class="hl-string">&quot;fat&quot;</span>
+<span class="hl-property">codegen-units</span> <span class="hl-operator">=</span> <span class="hl-number">1</span>
+</code></pre>
+<p>and build with <code>RUSTFLAGS=&quot;-C target-cpu=native&quot; cargo build --release</code></p>
+<pre><code>$ hyperfine ./target/release/v3_cheep_tricks
+Time (mean ± σ):    2.317s ± 0.068s  [User: 2.311s, System: 0.001s]
+Range (min … max):  2.148s … 2.587s  500 runs
+</code></pre>
+<p><sup class="footnote-reference" id="fnref:3"><a href="#fn:3">3</a></sup>
+Modest gains, but this isn’t what we’re looking for.</p>
+<h2><a id="profiling" class="anchor" href="#profiling" aria-hidden="true"></a>Profiling</h2>
+<p>Given none of the cheep tricks have worked, we need to actually know what we’re
+spending time on. Running <a href="https://github.com/flamegraph-rs/flamegraph"><code>cargo flamegraph</code></a> we get: </p>
+<p><a href="/alona.page//metaregex/rust_regex_fg1.svg"><img src="/alona.page//metaregex/rust_regex_fg1.svg" alt="A flamegraph, most of the time is spent inRegex::new" /></a></p>
+<p>(You can click on the image to view the full interactive SVG.)</p>
+<p>Most of the time is going to building the regex (<code>Regex::new</code>), but with some time going to <code>is_match</code> and <code>drop_in_place</code>. </p>
+<p>Let’s look at regex compilation. Regex strings are
+<a href="https://github.com/rust-lang/regex/blob/master/HACKING.md#compilation">“compiled”</a>
+to an internal representation that allows matching.  Givin this may be the only
+application (<a href="https://github.com/aDotInTheVoid/meta-regex-golf/issues/new">let me
+know</a> if it isn’t)
+that depends on compiling regex’s fast, the regex crate is designed (much like
+rust itself) to do lots of work at compile time to avoid doing work at runtime.
+In fact, in the performance guide, the first thing it tells you is <a href="https://github.com/rust-lang/regex/blob/adb4aa3ce437ba1978af540071f85e302cced3ec/PERFORMANCE.md#thou-shalt-not-compile-regular-expressions-in-a-loop">avoid
+compiling
+regexes</a>.</p>
+<p>Therefor what needs to happen is when a <code>String</code> for a regex part is generated
+in <code>regex_parts</code>, it is stored with the <code>regex::Regex</code> it represents instead of
+creating that <code>regex::Regex</code> every time.</p>
+<h2><a id="caching-regexes" class="anchor" href="#caching-regexes" aria-hidden="true"></a>Caching Regexes</h2>
+<p>Let’s make a struct to represent a Part of a regex (eg <code>i..n</code>). </p>
+<pre><code><span class="hl-attribute">#<span class="hl-punctuation-bracket">[</span>derive<span class="hl-punctuation-bracket">(</span><span class="hl-constructor">Clone</span><span class="hl-punctuation-bracket">)</span><span class="hl-punctuation-bracket">]</span></span>
+<span class="hl-keyword">struct</span> <span class="hl-type">Part</span> <span class="hl-punctuation-bracket">{</span>
+    <span class="hl-property">string</span><span class="hl-punctuation-delimiter">:</span> <span class="hl-type">String</span><span class="hl-punctuation-delimiter">,</span>
+    <span class="hl-property">reg</span><span class="hl-punctuation-delimiter">:</span> <span class="hl-type">Regex</span><span class="hl-punctuation-delimiter">,</span>
+<span class="hl-punctuation-bracket">}</span>
+</code></pre>
+<p>Because <code>regex::Regex</code> doesn’t implement <code>Hash</code> or <code>Eq</code> (why would it?), we need
+to do that ourselves. Fortunately we can use the string to do that as every
+string uniquely identifies a regex. </p>
+<pre><code><span class="hl-keyword">impl</span> <span class="hl-type">Hash</span> <span class="hl-keyword">for</span> <span class="hl-type">Part</span> <span class="hl-punctuation-bracket">{</span>
+    <span class="hl-keyword">fn</span> <span class="hl-function">hash</span><span class="hl-punctuation-bracket">&lt;</span><span class="hl-type">H</span><span class="hl-punctuation-delimiter">:</span> <span class="hl-type">Hasher</span><span class="hl-punctuation-bracket">&gt;</span><span class="hl-punctuation-bracket">(</span><span class="hl-operator">&amp;</span><span class="hl-variable-builtin">self</span><span class="hl-punctuation-delimiter">,</span> <span class="hl-variable-parameter">state</span><span class="hl-punctuation-delimiter">:</span> <span class="hl-operator">&amp;</span><span class="hl-keyword">mut</span> <span class="hl-type">H</span><span class="hl-punctuation-bracket">)</span> <span class="hl-punctuation-bracket">{</span>
+        <span class="hl-variable-builtin">self</span><span class="hl-punctuation-delimiter">.</span><span class="hl-property">string</span><span class="hl-punctuation-delimiter">.</span><span class="hl-function-method">hash</span><span class="hl-punctuation-bracket">(</span>state<span class="hl-punctuation-bracket">)</span><span class="hl-punctuation-delimiter">;</span>
+    <span class="hl-punctuation-bracket">}</span>
+<span class="hl-punctuation-bracket">}</span>
+<span class="hl-keyword">impl</span> <span class="hl-type">PartialEq</span> <span class="hl-keyword">for</span> <span class="hl-type">Part</span> <span class="hl-punctuation-bracket">{</span>
+    <span class="hl-keyword">fn</span> <span class="hl-function">eq</span><span class="hl-punctuation-bracket">(</span><span class="hl-operator">&amp;</span><span class="hl-variable-builtin">self</span><span class="hl-punctuation-delimiter">,</span> <span class="hl-variable-parameter">other</span><span class="hl-punctuation-delimiter">:</span> <span class="hl-operator">&amp;</span><span class="hl-type">Self</span><span class="hl-punctuation-bracket">)</span> -&gt; <span class="hl-type-builtin">bool</span> <span class="hl-punctuation-bracket">{</span>
+        <span class="hl-variable-builtin">self</span><span class="hl-punctuation-delimiter">.</span><span class="hl-property">string</span> == other<span class="hl-punctuation-delimiter">.</span><span class="hl-property">string</span>
+    <span class="hl-punctuation-bracket">}</span>
+<span class="hl-punctuation-bracket">}</span>
+<span class="hl-keyword">impl</span> <span class="hl-type">Eq</span> <span class="hl-keyword">for</span> <span class="hl-type">Part</span> <span class="hl-punctuation-bracket">{</span><span class="hl-punctuation-bracket">}</span>
+
+<span class="hl-keyword">impl</span> <span class="hl-type">Part</span> <span class="hl-punctuation-bracket">{</span>
+    <span class="hl-keyword">fn</span> <span class="hl-function">new</span><span class="hl-punctuation-bracket">(</span><span class="hl-variable-parameter">string</span><span class="hl-punctuation-delimiter">:</span> <span class="hl-type">String</span><span class="hl-punctuation-bracket">)</span> -&gt; <span class="hl-type">Self</span> <span class="hl-punctuation-bracket">{</span>
+        <span class="hl-keyword">let</span> reg = <span class="hl-type">Regex</span><span class="hl-punctuation-delimiter">::</span><span class="hl-function">new</span><span class="hl-punctuation-bracket">(</span><span class="hl-operator">&amp;</span>string<span class="hl-punctuation-bracket">)</span><span class="hl-punctuation-delimiter">.</span><span class="hl-function-method">unwrap</span><span class="hl-punctuation-bracket">(</span><span class="hl-punctuation-bracket">)</span><span class="hl-punctuation-delimiter">;</span>
+        <span class="hl-type">Self</span> <span class="hl-punctuation-bracket">{</span> reg<span class="hl-punctuation-delimiter">,</span> string <span class="hl-punctuation-bracket">}</span>
+    <span class="hl-punctuation-bracket">}</span>
+<span class="hl-punctuation-bracket">}</span>
+</code></pre>
+<p>Now to rewrite the rest of the code. First we add <code>.map(Part::new)</code> to
+<code>regex_parts</code> to generate the regex their. Every regex gets run at least once
+(in <code>max_by_key</code>) so we don’t have to worry about lazily compiling them. Next we
+change the function signatures and replace the calls with the regex parts. As
+most of them will access the <code>string</code> field, but <code>Regex::new(...).unwrap()</code> can
+become <code>reg</code>.</p>
+<p>For example, <code>matches</code> becomes:</p>
+<pre><code><span class="hl-keyword">fn</span> <span class="hl-function">matches</span><span class="hl-punctuation-bracket">&lt;</span><span class="hl-operator">&#39;</span><span class="hl-label">a</span><span class="hl-punctuation-bracket">&gt;</span><span class="hl-punctuation-bracket">(</span>
+    <span class="hl-variable-parameter">r</span><span class="hl-punctuation-delimiter">:</span> <span class="hl-operator">&amp;</span><span class="hl-operator">&#39;</span><span class="hl-label">a</span> <span class="hl-type">Part</span><span class="hl-punctuation-delimiter">,</span>
+    <span class="hl-variable-parameter">strs</span><span class="hl-punctuation-delimiter">:</span> <span class="hl-keyword">impl</span> <span class="hl-type">Iterator</span><span class="hl-punctuation-bracket">&lt;</span><span class="hl-type">Item</span> = <span class="hl-operator">&amp;</span><span class="hl-operator">&#39;</span><span class="hl-label">a</span> <span class="hl-type-builtin">str</span><span class="hl-punctuation-bracket">&gt;</span> + <span class="hl-operator">&#39;</span><span class="hl-label">a</span><span class="hl-punctuation-delimiter">,</span>
+<span class="hl-punctuation-bracket">)</span> -&gt; <span class="hl-keyword">impl</span> <span class="hl-type">Iterator</span><span class="hl-punctuation-bracket">&lt;</span><span class="hl-type">Item</span> = <span class="hl-operator">&amp;</span><span class="hl-operator">&#39;</span><span class="hl-label">a</span> <span class="hl-type-builtin">str</span><span class="hl-punctuation-bracket">&gt;</span> + <span class="hl-operator">&#39;</span><span class="hl-label">a</span> <span class="hl-punctuation-bracket">{</span>
+    strs<span class="hl-punctuation-delimiter">.</span><span class="hl-function-method">filter</span><span class="hl-punctuation-bracket">(</span><span class="hl-keyword">move</span> |s| r<span class="hl-punctuation-delimiter">.</span><span class="hl-property">reg</span><span class="hl-punctuation-delimiter">.</span><span class="hl-function-method">is_match</span><span class="hl-punctuation-bracket">(</span>s<span class="hl-punctuation-bracket">)</span><span class="hl-punctuation-bracket">)</span>
+<span class="hl-punctuation-bracket">}</span>
+</code></pre>
+<p>The only complication was that we had to add <code>#![type_length_limit=&quot;12373190&quot;]</code>. This is because regex_parts returns a iterator so complex it’s full type signature is:</p>
+<pre><code>core::iter::adapters::chain::Chain&lt;core::iter::adapters::Map&lt;core::iter::adapters::Map&lt;std::collections::hash::set::Iter&lt;&amp;str&gt;, playground::regex_parts::{{closure}}&gt;, playground::Part::new&gt;, core::iter::adapters::Filter&lt;core::iter::adapters::Map&lt;core::iter::adapters::flatten::FlatMap&lt;core::iter::adapters::flatten::FlatMap&lt;core::iter::adapters::Map&lt;std::collections::hash::set::Iter&lt;&amp;str&gt;, playground::regex_parts::{{closure}}&gt;, core::iter::adapters::Map&lt;core::iter::adapters::Filter&lt;core::iter::adapters::Map&lt;itertools::adaptors::Product&lt;core::ops::range::RangeInclusive&lt;usize&gt;, core::ops::range::Range&lt;usize&gt;&gt;, playground::subparts::{{closure}}&gt;, playground::subparts::{{closure}}&gt;, playground::subparts::{{closure}}&gt;, playground::subparts&gt;, core::iter::adapters::Map&lt;core::iter::adapters::Map&lt;core::ops::range::Range&lt;usize&gt;, playground::dotify::{{closure}}&gt;, playground::dotify::{{closure}}&gt;, playground::dotify&gt;, playground::Part::new&gt;, playground::regex_parts::{{closure}}&gt;&gt;
+</code></pre>
+<p>Has this worked.</p>
+<pre><code>$ hyperfine ./target/release/v5_cache_regex
+Time (mean ± σ):    194.0ms ±   1.6ms  [User: 182.9ms, System: 10.4ms]
+Range (min … max):  190.8ms … 206.0ms  500 runs
+</code></pre>
+<p>Yep, it has. That said <a href="https://nbviewer.jupyter.org/url/norvig.com/ipython/xkcd1313-part2.ipynb#Speedup:--Faster-matches-by-Compiling-Regexes">norvig did this
+too</a>, in his follow up post
+so we should benchmark that one, to be fair. <sup class="footnote-reference" id="fnref:4"><a href="#fn:4">4</a></sup></p>
+<pre><code>$ hyperfine python norvig_cache.py
+Time (mean ± σ):    788.8ms ±  10.2ms  [User: 783.9ms, System: 2.9ms]
+Range (min … max):  770.8ms … 821.4ms  500 runs
+</code></pre>
+<p>But can we go further? Let’s do a flamegraph for this new version and see where we land</p>
+<p><a href="/alona.page//metaregex/rust_regex_fg3.svg"><img src="/alona.page//metaregex/rust_regex_fg3.svg" alt="" /></a></p>
+<p>Their’s three main parts: </p>
+<ul>
+<li><code>core::ptr::drop_in_place</code>: We’re using alot of strings, so /(de)?allocations/
+are inevitable. That said, useing an alternative allocator may speed this up.</li>
+<li><code>regex::re_unicode::Regex::new</code> is still about 60% Of the time. However baring
+switching to an alternate regex implementation, I’m not sure what more can be
+done. Every regex needs to be compiled.</li>
+<li><code>regex::re_unicode::Regex::new</code> now takes up 21% of the of the time. This is
+much better as it previously only took up 11% so much more of the time is
+actual regex matching.</li>
+</ul>
+<h2><a id="alternative-allocations" class="anchor" href="#alternative-allocations" aria-hidden="true"></a>Alternative Allocations</h2>
+<p>Next we can replace the allocator. Rust makes it very easy to use an alternative
+to the system allocator, such as Jemalloc <sup class="footnote-reference" id="fnref:5"><a href="#fn:5">5</a></sup>:</p>
+<pre><code><span class="hl-attribute">#<span class="hl-punctuation-bracket">[</span>global_allocator<span class="hl-punctuation-bracket">]</span></span>
+<span class="hl-keyword">static</span> <span class="hl-constructor">GLOBAL</span><span class="hl-punctuation-delimiter">:</span> <span class="hl-type">Jemalloc</span> = <span class="hl-constructor">Jemalloc</span><span class="hl-punctuation-delimiter">;</span>
+</code></pre>
+<pre><code>hyperfine ./target/release/v7_jemalloc
+Time (mean ± σ):    169.2ms ±   1.5ms  [User: 158.2ms, System: 10.5ms]
+Range (min … max):  166.4ms … 179.6ms  500 runs
+</code></pre>
+<p>That a roughly 15% speedup just by ditching the system allocator (glibc 2.30-11).</p>
+<p><a href="/alona.page//metaregex/rust_regex_fg4.svg"><img src="/alona.page//metaregex/rust_regex_fg4.svg" alt="" /></a></p>
+<p>After using jemalloc, the flamegraph looks like this, and their is very little
+time spend allocating. Almost all the time is spend in <code>regex</code> itself, so I
+think that’s as far as we can go while keeping this a fair test.</p>
+<h2><a id="conclusion" class="anchor" href="#conclusion" aria-hidden="true"></a>Conclusion</h2>
+<p>Rust is fast but python can be fast too. While it can be easy to assume that
+with zero cost abstraction’s and no garbage collector and no runtime, rust will
+smoke interpreted languages like python and node. <a href="https://youtu.be/GCsxYAxw3JQ?t=1605">This isn’t the
+case</a>. Alot of work has gone into cpython
+and v8 optimizations, and they both use c/c++ for things like regex and strings.</p>
+<p>To quote <a href="https://youtu.be/GCsxYAxw3JQ?t=1674">ashley williams (quoting someone else)</a></p>
+<blockquote>
+<p>I just fully expected to rust my way into 50% perf over js. Sometimes you
+forget that v8 is pretty darn fast</p>
+</blockquote>
+<p>This apples equally to python. Rust isn’t a silver bullet for speed. Garbage
+collection doesn’t automatically mean performance will be bad.
+<a href="https://transitiontech.ca/random/RIIR">RIIR</a> can make things worse. Rust is
+great, but so are other language</p>
+<h2><a id="future-work" class="anchor" href="#future-work" aria-hidden="true"></a>Future work</h2>
+<p>Several things could still be done</p>
+<h3><a id="use-a-common-regex-framework" class="anchor" href="#use-a-common-regex-framework" aria-hidden="true"></a>Use a common regex framework.</h3>
+<p>By using PCRE on both sides, we could eliminate one cause of performance difference.</p>
+<h3><a id="use-a-custom-regex-engine" class="anchor" href="#use-a-custom-regex-engine" aria-hidden="true"></a>Use a custom regex engine</h3>
+<p>On the other end of the specrum, if the goal is juicing as much speed as
+possible out of playing meta-regex golf, I suspect the way forward will be a
+custom regex engine that is designed for fast compilation and only supports the
+subset of regex used.</p>
+<h3><a id="go-over-norvig" class="anchor" href="#go-over-norvig" aria-hidden="true"></a>Go over norvig’s part 2</h3>
+<p>Norvig has written a
+<a href="https://nbviewer.jupyter.org/url/norvig.com/ipython/xkcd1313-part2.ipynb#Speedup:--Faster-matches-by-Compiling-Regexes">followup</a>
+to the original post. I have just used it for the cached version, but their are
+also some improvement to the algorithm, both in terms of speed and output
+quality, it would be interesting to port over.</p>
+<h2><a id="results-table" class="anchor" href="#results-table" aria-hidden="true"></a>Results Table</h2>
+<table><thead><tr><th style="text-align: left">Command</th><th style="text-align: right">Mean [s]</th><th style="text-align: right">Min [s]</th><th style="text-align: right">Max [s]</th><th style="text-align: right">Relative</th></tr></thead><tbody>
+<tr><td style="text-align: left"><code>python3 norvig_nocache.py</code></td><td style="text-align: right">1.186 ± 0.013</td><td style="text-align: right">1.161</td><td style="text-align: right">1.252</td><td style="text-align: right">7.0</td></tr>
+<tr><td style="text-align: left"><code>python3 norvig_with_cache.py</code></td><td style="text-align: right">0.789 ± 0.010</td><td style="text-align: right">0.771</td><td style="text-align: right">0.821</td><td style="text-align: right">4.7</td></tr>
+<tr><td style="text-align: left"><code>out/v1_naive</code></td><td style="text-align: right">2.426 ± 0.070</td><td style="text-align: right">2.227</td><td style="text-align: right">2.692</td><td style="text-align: right">14.3</td></tr>
+<tr><td style="text-align: left"><code>out/v3_cheep_tricks</code></td><td style="text-align: right">2.317 ± 0.068</td><td style="text-align: right">2.148</td><td style="text-align: right">2.587</td><td style="text-align: right">13.7</td></tr>
+<tr><td style="text-align: left"><code>out/v5_cache_regex</code></td><td style="text-align: right">0.194 ± 0.002</td><td style="text-align: right">0.191</td><td style="text-align: right">0.206</td><td style="text-align: right">1.1</td></tr>
+<tr><td style="text-align: left"><code>out/v7_jemalloc</code></td><td style="text-align: right">0.169 ± 0.002</td><td style="text-align: right">0.166</td><td style="text-align: right">0.180</td><td style="text-align: right">1.0</td></tr>
+</tbody></table>
+<hr />
+<p><a href="https://www.reddit.com/r/rust/comments/gnjc3y/meta_regex_golf_python_can_be_fast_too_adventures/">Discuss on reddit</a></p>
+<p><a href="https://github.com/aDotInTheVoid/meta-regex-golf/">Get the code</a></p>
+<hr/><ol><li id="fn:1"><p>Comic licensed under a <a href="http://creativecommons.org/licenses/by-nc/2.5/">Creative Commons Attribution-NonCommercial 2.5 License</a><a href="#fnref:1" class="footnote-backref">↩</a></p>
+</li>
+<li id="fn:2"><p>See <a href="https://github.com/aDotInTheVoid/meta-regex-golf">here</a>
+for the full setup and code, but in short I originally used <code>time</code> and <code>awk</code> to
+average benchmarks, but <a href="https://www.reddit.com/r/rust/comments/gnjc3y/meta_regex_golf_python_can_be_fast_too_adventures/fra6tta?utm_source=share&amp;utm_medium=web2x">a kind
+redditor</a>,
+suggested <a href="https://github.com/sharkdp/hyperfine">hyperfine</a>, so I reran the
+benchmarks with that.
+</p><p>
+Benchmarked with 
+<code>hyperfine -w 15 -m 500 --export-markdown BENCH.md &quot;python3 norvig_nocache.py&quot; &quot;python3 norvig_with_cache.py&quot; out/*</code>
+on a system with
+</p><p><ul>
+<li>rustc 1.43.1 (8d69840ab 2020-05-04)</li>
+<li>Python 3.7.7</li>
+<li>hyperfine 1.6.0</li>
+<li>Fedora 31 (Workstation Edition) x86_64</li>
+<li>Linux 5.6.13-200.fc31.x86_64</li>
+<li>glibc-2.30-11.fc31.x86_64</li>
+<li>Intel i7-2700K (8) @ 3.900GHz, 7922MiB Ram (as reported by neofetch)</li>
+</ul><a href="#fnref:2" class="footnote-backref">↩</a></p>
+</li>
+<li id="fn:3"><p>In case you’re woundering where v2 is, it was trying to solve with 
+<a href="https://docs.rs/regex/1.3.7/regex/#crate-features">regex features</a>. Every combination
+other than the default seemed to slow it down. This is also what v5 was. v4 was to 
+<code>#[inline(never)]</code>, and didn’t need to show up in the benchmark. If you really want to see
+them, you can dig through the history in the <a href="https://github.com/aDotInTheVoid/meta-regex-golf/">repo</a><a href="#fnref:3" class="footnote-backref">↩</a></p>
+</li>
+<li id="fn:4"><p>As burntsushi (maintainer of the <code>regex</code> crate) <a href="https://www.reddit.com/r/rust/comments/gnjc3y/meta_regex_golf_python_can_be_fast_too_adventures/fra6enz?utm_source=share&amp;utm_medium=web2x">pointed out</a>, python will also implicitly cache regexes, so be aware of that. That said, adding one line to manually cache is about 2x faster, so I don’t really understand what’s going on.<a href="#fnref:4" class="footnote-backref">↩</a></p>
+</li>
+<li id="fn:5"><p>I also tried mimalloc, but is was slower.<a href="#fnref:5" class="footnote-backref">↩</a></p>
+</li>
+
+</ol>
+
+
+
+
+
+
+
+
+
+    <hr />
+    <a href="https://github.com/aDotInTheVoid/">GitHub</a>
+    <a rel="me" href="https://social.treehouse.systems/@aDot">Mastodon</a>
+    <a href="mailto:contact@alona.page">Email</a>
+    <a href="/alona.page/index.xml">RSS</a>
+</body>
+
+</html>
