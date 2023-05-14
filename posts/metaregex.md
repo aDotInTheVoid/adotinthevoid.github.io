@@ -304,7 +304,7 @@ Given none of the cheep tricks have worked, we need to actually know what we're
 spending time on. Running [`cargo
 flamegraph`](https://github.com/flamegraph-rs/flamegraph) we get: 
 
-[![A flamegraph, most of the time is spent in`Regex::new`](/metaregex/rust_regex_fg1.svg)](/metaregex/rust_regex_fg1.svg)
+[![A flamegraph, most of the time is spent in`Regex::new`](metaregex/rust_regex_fg1.svg)](metaregex/rust_regex_fg1.svg)
 
 (You can click on the image to view the full interactive SVG.)
 
@@ -406,7 +406,7 @@ Range (min … max):  770.8ms … 821.4ms  500 runs
 
 But can we go further? Let's do a flamegraph for this new version and see where we land
 
-[![](/metaregex/rust_regex_fg3.svg)](/metaregex/rust_regex_fg3.svg)
+[![](metaregex/rust_regex_fg3.svg)](metaregex/rust_regex_fg3.svg)
 
 Their's three main parts: 
 - `core::ptr::drop_in_place`: We're using alot of strings, so /(de)?allocations/
@@ -436,7 +436,7 @@ That a roughly 15% speedup just by ditching the system allocator (glibc 2.30-11)
 
 [^mimalloc]: I also tried mimalloc, but is was slower.
 
-[![](/metaregex/rust_regex_fg4.svg)](/metaregex/rust_regex_fg4.svg)
+[![](metaregex/rust_regex_fg4.svg)](metaregex/rust_regex_fg4.svg)
 
 After using jemalloc, the flamegraph looks like this, and their is very little
 time spend allocating. Almost all the time is spend in `regex` itself, so I
