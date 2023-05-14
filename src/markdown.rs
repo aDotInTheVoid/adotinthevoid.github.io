@@ -118,7 +118,7 @@ pub fn render(conf: &Config, input: &str) -> String {
 }
 
 fn fix_link<'a>(link: CowStr<'a>, conf: &Config) -> CowStr<'a> {
-    if link.starts_with('/') {
+    if let Some(link) = link.strip_prefix('/') {
         CowStr::Boxed(format!("{}{}", conf.base_url, link).into_boxed_str())
     } else {
         link
