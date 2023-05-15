@@ -262,7 +262,7 @@ Modest gains, but this isn’t what we’re looking for.</p>
 <h2><a id="profiling" class="anchor" href="#profiling" aria-hidden="true"></a>Profiling</h2>
 <p>Given none of the cheep tricks have worked, we need to actually know what we’re
 spending time on. Running <a href="https://github.com/flamegraph-rs/flamegraph"><code>cargo flamegraph</code></a> we get: </p>
-<p><a href="metaregex/rust_regex_fg1.svg"><img src="metaregex/rust_regex_fg1.svg" alt="A flamegraph, most of the time is spent inRegex::new" /></a></p>
+<p><a href="/metaregex/rust_regex_fg1.svg"><img src="/metaregex/rust_regex_fg1.svg" alt="A flamegraph, most of the time is spent inRegex::new" /></a></p>
 <p>(You can click on the image to view the full interactive SVG.)</p>
 <p>Most of the time is going to building the regex (<code>Regex::new</code>), but with some time going to <code>is_match</code> and <code>drop_in_place</code>. </p>
 <p>Let’s look at regex compilation. Regex strings are
@@ -338,7 +338,7 @@ Time (mean ± σ):    788.8ms ±  10.2ms  [User: 783.9ms, System: 2.9ms]
 Range (min … max):  770.8ms … 821.4ms  500 runs
 </code></pre>
 <p>But can we go further? Let’s do a flamegraph for this new version and see where we land</p>
-<p><a href="metaregex/rust_regex_fg3.svg"><img src="metaregex/rust_regex_fg3.svg" alt="" /></a></p>
+<p><a href="/metaregex/rust_regex_fg3.svg"><img src="/metaregex/rust_regex_fg3.svg" alt="" /></a></p>
 <p>Their’s three main parts: </p>
 <ul>
 <li><code>core::ptr::drop_in_place</code>: We’re using alot of strings, so /(de)?allocations/
@@ -361,7 +361,7 @@ Time (mean ± σ):    169.2ms ±   1.5ms  [User: 158.2ms, System: 10.5ms]
 Range (min … max):  166.4ms … 179.6ms  500 runs
 </code></pre>
 <p>That a roughly 15% speedup just by ditching the system allocator (glibc 2.30-11).</p>
-<p><a href="metaregex/rust_regex_fg4.svg"><img src="metaregex/rust_regex_fg4.svg" alt="" /></a></p>
+<p><a href="/metaregex/rust_regex_fg4.svg"><img src="/metaregex/rust_regex_fg4.svg" alt="" /></a></p>
 <p>After using jemalloc, the flamegraph looks like this, and their is very little
 time spend allocating. Almost all the time is spend in <code>regex</code> itself, so I
 think that’s as far as we can go while keeping this a fair test.</p>
