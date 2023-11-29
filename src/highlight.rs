@@ -1,10 +1,6 @@
 use tree_sitter_highlight::{HighlightConfiguration, Highlighter, HtmlRenderer};
 
-const FOO: &'static str = "ABCD";
-
 pub fn highlight(lang: &str, source: &str) -> String {
-    let _ = FOO;
-
     let mut conf = match lang {
         "rust" => HighlightConfiguration::new(
             tree_sitter_rust::language(),
