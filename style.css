@@ -1,5 +1,5 @@
 :root {
-    --color-background: pink;
+    --color-background: #e8ece8;
     --color-text: #282020;
     --color-accent: #a468a5;
 
@@ -42,7 +42,7 @@ body {
     margin: 0 auto;
     max-width: 80ch;
     padding: 2ch;
-    font-family: 'Gill Sans', 'Gill Sans MT', Calibri, 'Trebuchet MS', sans-serif;
+    font-family: 'Gill Sans', 'Gill Sans MT', 'Trebuchet MS', Helvetica, sans-serif;
     line-height: 1.3em;
 }
 
