@@ -122,7 +122,7 @@ and the magic of rust’s bots will keep you up to date.</li>
     └── set.rs
 </code></pre>
 <p>And written like</p>
-<pre><code><span class="hl-comment">// collections/src/lib.rs</span>
+<pre lang="rust"><code><span class="hl-comment">// collections/src/lib.rs</span>
 <span class="hl-keyword">pub</span> <span class="hl-keyword">mod</span> list<span class="hl-punctuation-delimiter">;</span>
 <span class="hl-keyword">pub</span> <span class="hl-keyword">mod</span> set<span class="hl-punctuation-delimiter">;</span>
 <span class="hl-keyword">pub</span> <span class="hl-keyword">mod</span> map<span class="hl-punctuation-delimiter">;</span>
@@ -136,7 +136,7 @@ and the magic of rust’s bots will keep you up to date.</li>
 <p>Then users of the module see the paths like <code>collections::list::List</code>, which
 needlessly duplicates “list”. To avoid this, code like this tends to get
 written as</p>
-<pre><code><span class="hl-comment">// collections/src/lib.rs</span>
+<pre lang="rust"><code><span class="hl-comment">// collections/src/lib.rs</span>
 <span class="hl-keyword">mod</span> list<span class="hl-punctuation-delimiter">;</span>
 <span class="hl-keyword">mod</span> set<span class="hl-punctuation-delimiter">;</span>
 <span class="hl-keyword">mod</span> map<span class="hl-punctuation-delimiter">;</span>
@@ -151,7 +151,7 @@ written as</p>
 <span class="hl-keyword">pub</span> <span class="hl-keyword">struct</span> <span class="hl-type">Map</span><span class="hl-punctuation-delimiter">;</span>
 </code></pre>
 <p>And the user now sees <code>List</code> as  <code>collections::List</code>, which is much nicer. It is as if the library author instead just wrote</p>
-<pre><code><span class="hl-comment">// collections/src/lib.rs</span>
+<pre lang="rust"><code><span class="hl-comment">// collections/src/lib.rs</span>
 <span class="hl-keyword">pub</span> <span class="hl-keyword">struct</span> <span class="hl-type">List</span><span class="hl-punctuation-delimiter">;</span>
 <span class="hl-keyword">pub</span> <span class="hl-keyword">struct</span> <span class="hl-type">Set</span><span class="hl-punctuation-delimiter">;</span>
 <span class="hl-keyword">pub</span> <span class="hl-keyword">struct</span> <span class="hl-type">Map</span><span class="hl-punctuation-delimiter">;</span>
@@ -162,7 +162,7 @@ written as</p>
 <code>pub use</code> of an item with the item being used.</p>
 <p>While this is great for the HTML output, it caused boundless problems for JSON. The most
 canonical example is</p>
-<pre><code><span class="hl-keyword">mod</span> style <span class="hl-punctuation-bracket">{</span>
+<pre lang="rust"><code><span class="hl-keyword">mod</span> style <span class="hl-punctuation-bracket">{</span>
     <span class="hl-keyword">pub</span> <span class="hl-keyword">struct</span> <span class="hl-type">Color</span><span class="hl-punctuation-delimiter">;</span>
 <span class="hl-punctuation-bracket">}</span>
 
@@ -172,7 +172,7 @@ canonical example is</p>
 <p><a href="https://docs.rs/ansi_term/0.12.1/ansi_term/index.html#enums">In HTML Output</a>,
 both <code>Color</code> and <code>Colour</code> are created as separate pages, with no indication that
 they are the same item. In fact, it is the same result as if</p>
-<pre><code><span class="hl-keyword">pub</span> <span class="hl-keyword">struct</span> <span class="hl-type">Color</span><span class="hl-punctuation-delimiter">;</span>
+<pre lang="rust"><code><span class="hl-keyword">pub</span> <span class="hl-keyword">struct</span> <span class="hl-type">Color</span><span class="hl-punctuation-delimiter">;</span>
 <span class="hl-keyword">pub</span> <span class="hl-keyword">struct</span> <span class="hl-type">Colour</span><span class="hl-punctuation-delimiter">;</span>
 </code></pre>
 <p>was written.</p>
@@ -212,7 +212,7 @@ checks that the output matches the assertions. The assertions are written in
 output has (and doesn’t have) the values that you expect.</p>
 <p>Eg <a href="https://github.com/rust-lang/rust/blob/bbdca4c28fd9b57212cb3316ff4ffb1529affcbe/src/test/rustdoc-json/reexport/reexport_method_from_private_module.rs"><code>src/test/rustdoc-json/reexport/reexport_method_from_private_module.rs</code></a> 
 currently looks like</p>
-<pre><code><span class="hl-comment">// @set impl_S = &quot;$.index[*][?(@.docs==&#39;impl S&#39;)].id&quot;</span>
+<pre lang="rust"><code><span class="hl-comment">// @set impl_S = &quot;$.index[*][?(@.docs==&#39;impl S&#39;)].id&quot;</span>
 <span class="hl-comment">// @has &quot;$.index[*][?(@.name==&#39;S&#39;)].inner.impls[*]&quot; $impl_S</span>
 <span class="hl-comment">// @set is_present = &quot;$.index[*][?(@.name==&#39;is_present&#39;)].id&quot;</span>
 <span class="hl-comment">// @is &quot;$.index[*][?(@.docs==&#39;impl S&#39;)].inner.items[*]&quot; $is_present</span>
@@ -246,7 +246,7 @@ currently looks like</p>
 <li><a href="https://github.com/rust-lang/rust/pull/100678/">#100678</a>: Don’t require specifying file in <code>jsondocck</code>.</li>
 </ol>
 <p>Between them, they mean a test like:</p>
-<pre><code><span class="hl-keyword">struct</span> <span class="hl-type">S</span>
+<pre lang="rust"><code><span class="hl-keyword">struct</span> <span class="hl-type">S</span>
 <span class="hl-comment">/// the impl</span><span class="hl-punctuation-delimiter"></span>
 <span class="hl-keyword">impl</span> <span class="hl-type">S</span> <span class="hl-punctuation-bracket">{</span>
     <span class="hl-keyword">pub</span> <span class="hl-keyword">fn</span> <span class="hl-function">foo</span><span class="hl-punctuation-bracket">(</span><span class="hl-punctuation-bracket">)</span> <span class="hl-punctuation-bracket">{</span><span class="hl-punctuation-bracket">}</span>
@@ -259,7 +259,7 @@ currently looks like</p>
 <span class="hl-comment">// @has   - &quot;$.index[*][?(@.docs==&#39;the impl&#39;)].inner.items[*]&quot; $bar</span>
 </code></pre>
 <p>can be rewritten to be</p>
-<pre><code><span class="hl-comment">// @set foo = &quot;$.index[*][?(@.name==&#39;foo&#39;)].id&quot;</span>
+<pre lang="rust"><code><span class="hl-comment">// @set foo = &quot;$.index[*][?(@.name==&#39;foo&#39;)].id&quot;</span>
 <span class="hl-comment">// @set bar = &quot;$.index[*][?(@.name==&#39;foo&#39;)].id&quot;</span>
 <span class="hl-comment">// @ismany &quot;$.index[*][?(@.docs==&#39;the impl&#39;)].inner.items[*]&quot; $foo $bar</span>
 </code></pre>
