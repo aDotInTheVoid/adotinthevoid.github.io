@@ -17,6 +17,7 @@ rss = { version = "2.0.3", features = ["validation", "atom"] }
 serde = { version = "1.0.159", features = ["derive"] }
 toml = "0.7.3"
 tree-sitter = "0.20.10"
+tree-sitter-c = "0.20.6"
 tree-sitter-highlight = "0.20.1"
 tree-sitter-rust = "0.20.3"
 tree-sitter-toml = "0.20.0"

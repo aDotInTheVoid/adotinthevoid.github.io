@@ -16,6 +16,15 @@ pub fn highlight(lang: &str, source: &str) -> String {
             "",
         )
         .unwrap(),
+        "c" => HighlightConfiguration::new(
+            tree_sitter_c::language(),
+            tree_sitter_c::HIGHLIGHT_QUERY,
+            "",
+            "",
+        )
+        .unwrap(),
+
+        "asciiart" => return source.to_owned(),
 
         _ => panic!("Unknown language: {}", lang),
     };

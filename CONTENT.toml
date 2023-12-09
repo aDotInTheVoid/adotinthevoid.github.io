@@ -2,6 +2,12 @@ base_url = "/~ne321/s2/"
 base_domain = "www.doc.ic.ac.uk"
 
 [[posts]]
+title = "When the Simplest malloc(3) Implemenation is the Right Answer"
+path = "posts/malloc.md"
+date = "2023-12-09"
+draft = true
+
+[[posts]]
 title = "A new site"
 path = "posts/new-site.md"
 date = "2022-04-05"

@@ -29,7 +29,9 @@ pub fn render(conf: &Config, input: &str) -> String {
             Event::Start(Tag::Heading(_, _, _)) => {
                 main_events.push(event);
 
-                let Some(Event::Text(t)) = parser.next() else {panic!()};
+                let Some(Event::Text(t)) = parser.next() else {
+                    panic!()
+                };
 
                 let mut slug = t.to_string().to_lowercase().replace(" ", "-");
                 slug.retain(|x| x.is_alphanumeric() || x == '-');
@@ -52,12 +54,25 @@ pub fn render(conf: &Config, input: &str) -> String {
                 main_events.push(Event::Start(Tag::Link(kind, link, title)))
             }
             Event::Start(Tag::CodeBlock(CodeBlockKind::Fenced(lang))) if !lang.is_empty() => {
-                let Some(Event::Text(source)) = parser.next() else {panic!()};
-                let Some(Event::End(Tag::CodeBlock(_))) = parser.next() else {panic!()};
+                let Some(Event::Text(source)) = parser.next() else {
+                    panic!()
+                };
+                let Some(Event::End(Tag::CodeBlock(_))) = parser.next() else {
+                    panic!()
+                };
+
+                for chr in lang.chars() {
+                    assert!(
+                        chr.is_ascii_alphanumeric(),
+                        "Invalid char {chr:?} in language {lang:?}"
+                    );
+                }
 
                 let html = crate::highlight::highlight(&lang, &source);
 
-                main_events.push(Event::Html(CowStr::Borrowed("<pre><code>")));
+                let opening = format!("<pre lang=\"{lang}\"><code>");
+
+                main_events.push(Event::Html(CowStr::Boxed(opening.into_boxed_str())));
                 main_events.push(Event::Html(CowStr::Boxed(html.into_boxed_str())));
                 main_events.push(Event::Html(CowStr::Borrowed("</code></pre>")));
             }
