@@ -1,6 +1,8 @@
 base_url = "/~ne321/s2/"
 base_domain = "www.doc.ic.ac.uk"
 
+## DRAFTS
+
 [[posts]]
 title = "When the Simplest malloc(3) Implemenation is the Right Answer"
 path = "posts/malloc.md"
@@ -12,6 +14,14 @@ title = "A new site"
 path = "posts/new-site.md"
 date = "2022-04-05"
 draft = true
+
+## PUBLISHED
+
+[[posts]]
+title = "Hidden Posts"
+path = "posts/hidden-posts.md"
+date = "2023-12-21"
+hidden = true
 
 [[posts]]
 title = "Rustdoc JSON in 2022"
