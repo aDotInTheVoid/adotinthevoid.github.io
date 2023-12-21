@@ -18,6 +18,12 @@ draft = true
 ## PUBLISHED
 
 [[posts]]
+title = "Joy this Year"
+path = "posts/joy-2023.md"
+date = "2023-12-22"
+hidden = true
+
+[[posts]]
 title = "Hidden Posts"
 path = "posts/hidden-posts.md"
 date = "2023-12-21"
