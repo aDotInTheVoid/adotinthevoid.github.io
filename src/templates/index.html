@@ -12,12 +12,14 @@
 
 <ul>
     {% for post in posts %}
+    {% if not post.hidden %}
     <li>
         {% if post.draft %}
         [DRAFT]
         {% endif %}
         <a href="{{base_url | safe}}{{post.url | safe}}/">{{post.title}}</a>: {{post.date}}
     </li>
+    {% endif %}
     {% endfor %}
 </ul>
 {% endblock %}

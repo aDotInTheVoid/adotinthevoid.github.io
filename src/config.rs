@@ -17,6 +17,13 @@ pub struct Post {
     pub path: Utf8PathBuf,
     #[serde(default)]
     pub draft: bool,
+
+    #[serde(default)]
+    /// Build the post, but don't put on the home page.
+    ///
+    /// Still put in the RSS feed.
+    pub hidden: bool,
+
     pub date: NaiveDate,
 }
 

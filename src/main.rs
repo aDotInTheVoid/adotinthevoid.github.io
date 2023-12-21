@@ -110,6 +110,7 @@ fn lower_post(
         date: p.date.format("%-d %B %Y").to_string(),
         content: markdown::render(&config, &fs::read_to_string(&p.path)?),
         draft: p.draft,
+        hidden: p.hidden,
     };
 
     let dt_2822: String = p
@@ -150,6 +151,7 @@ struct HomePostArgs {
     date: String,
     content: String,
     draft: bool,
+    hidden: bool,
 }
 
 #[derive(Serialize, Clone)]
