@@ -16,6 +16,11 @@ date = "2022-04-05"
 draft = true
 
 ## PUBLISHED
+[[posts]]
+title = "Rustdoc JSON in 2023"
+path = "posts/rustdoc-json-2023.md"
+date = "2023-12-29"
+draft = true
 
 [[posts]]
 title = "Joy this Year"
