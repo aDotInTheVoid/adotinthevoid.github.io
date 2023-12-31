@@ -26,9 +26,9 @@
 and looking forward to next year. I did this <a href="/posts/rustdoc-json-2022/">last year</a>, and it was a super useful exercise for me
 personally, and also a good resource of what’s changed, without having to trawl through GitHub.</p>
 <h2><a id="what" class="anchor" href="#what" aria-hidden="true"></a>What’s Rustdoc JSON</h2>
-<p>(note: You can skip this section if you’re already framilar with it.)</p>
-<p>Rustdoc JSON is a unstable feature for rustdoc that allows generating machine readable JSON output descibing
-the API of a crate (instead of the normal human readable HTML output). If you think of rustdoc like a compiller
+<p>(note: You can skip this section if you’re already familiar with it.)</p>
+<p>Rustdoc JSON is a unstable feature for rustdoc that allows generating machine readable JSON output describing
+the API of a crate (instead of the normal human readable HTML output). If you think of rustdoc like a compiler
 from a crate to a description of its API <sup class="footnote-reference" id="fnref:1"><a href="#fn:1">1</a></sup>, this is an alternative target.</p>
 <p>This allows tools to reason mechanically about an API in rust. It’s the underlying data source for
 <a href="https://roogle.hkmatsumoto.com/">roogle</a>,
@@ -57,7 +57,7 @@ test tooling. However, it can’t be directly used by 3rd party code, as it isn�
 <p>To ease adoption, I created the
 <a href="https://crates.io/crates/rustdoc-types"><code>rustdoc-types</code></a> crate. It’s a
 somewhat automated repackaging of the in-tree <code>rustdoc-json-types</code> crate onto
-crates.io. Most consumers (AFAIKT) of rustdoc-json do so via this crate.
+crates.io. Most consumers (AFAICT) of rustdoc-json do so via this crate.
 However, despite its importance, it’s a personal project. It lives in
 <a href="https://github.com/aDotInTheVoid/rustdoc-types/tree/4be3505d55aa502f7aec3f71383a7dec660bd177/">my github account</a>,
 and only I have the permissions to publish new versions to crates.io.</p>
@@ -87,7 +87,7 @@ happening again.</p>
 <h2><a id="good-chats-on-zulip" class="anchor" href="#good-chats-on-zulip" aria-hidden="true"></a>Good Chats on Zulip</h2>
 <p>This section is half so you can see how the sausage gets made with designing
 stuff, and half so I can find these links easier in the future.</p>
-<h3><a id="the-metaformat-and-documenting-signatures-that-relly-on-nightly-features" class="anchor" href="#the-metaformat-and-documenting-signatures-that-relly-on-nightly-features" aria-hidden="true"></a>The Metaformat, and documenting signatures that relly on nightly features</h3>
+<h3><a id="the-metaformat-and-documenting-signatures-that-rely-on-nightly-features" class="anchor" href="#the-metaformat-and-documenting-signatures-that-rely-on-nightly-features" aria-hidden="true"></a>The Metaformat, and documenting signatures that rely on nightly features</h3>
 <p><a href="https://rust-lang.zulipchat.com/#narrow/stream/266220-t-rustdoc/topic/Rustdoc.20JSON.3A.20Experimental.20rustc.20features">Link</a>.
 The core question here is “How much support should rustdoc JSON give to nightly language features”, and “How should they be versioned”.
 The conclusion is that for now, we should version them like regular language features (to keep <code>format_version</code> as an unambiguous description of which schema was used to serialize).</p>
@@ -109,7 +109,7 @@ and has mechanisms to minimize disruption. But a metaformat change would break a
 mechanisms, and would be much more unexpected.
 Therefore, we should aim to only change metaformat once,
 and to a metaformat that we believe we can stabilize.</p>
-<h3><a id="stablilization-requirements" class="anchor" href="#stablilization-requirements" aria-hidden="true"></a>Stablilization Requirements</h3>
+<h3><a id="stabilization-requirements" class="anchor" href="#stabilization-requirements" aria-hidden="true"></a>Stabilization Requirements</h3>
 <p>We also talked a 
 <a href="https://rust-lang.zulipchat.com/#narrow/stream/266220-rustdoc/topic/Rustdoc.20JSON.3A.20Stabilization.20criteria">couple</a>
 of
