@@ -169,6 +169,11 @@ written inside of `jsondoclint`, which is much simpler to understand and modify.
 ??? IDK ???. Some stuff happened in 2023. Some of it was Rustdoc JSON related.
 Does this post even need a conclusion? Probably.
 
+If you have questions or comments on this post, I'd love to here them.
+You can reply to me [on the Fediverse](https://social.treehouse.systems/@aDot/111675587239258225),
+open a discussion on [GitHub](https://github.com/aDotInTheVoid/aDotInTheVoid.github.io/discussions),
+or send me an [email][mailto:contact-AT-alona-DOT-page]
+
 *Thanks to [jyn](https://jyn.dev/) and [Predrag](https://predr.ag/) for their feedback on drafts of this post. Any and all mistakes are solely my own.*
 
 [106354]: https://github.com/rust-lang/rust/pull/106354
