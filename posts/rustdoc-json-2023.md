@@ -12,7 +12,7 @@ personally, and also a good resource of what's changed, without having to trawl 
 
 ## What's Rustdoc JSON
 
-(note: You can skip this section if your already framilar with it.)
+(note: You can skip this section if you're already framilar with it.)
 
 Rustdoc JSON is a unstable feature for rustdoc that allows generating machine readable JSON output descibing
 the API of a crate (instead of the normal human readable HTML output). If you think of rustdoc like a compiller
@@ -36,7 +36,7 @@ The most user-facing changes this year were changes to the JSON format itself. W
 
 24. [#106354][106354]: `Variant` was split into `Variant` and `VariantKind`, so the enum discriminant can always be reported. Previously, it could only be reported for a plain enum variant (i.e. one with no fields or braces).
 25. [#109410][109410]: Support inherent associated types.
-26. [#111427][111427]: Serialize all enums using external tagging. This didn't change the information that was present, but how it's represented in JSON. Doing this is more consistent [^enum_consistant], and allows (de)serializing to non-self-describing formats, such as postcard and bincode[^binary_format]. This can give a [significant performance improvement](https://rust-lang.zulipchat.com/#narrow/stream/266220-t-rustdoc/topic/.28De.29serialization.20speed.20of.20JSON.20docs/near/356983259). Special thanks to [Luca Palmieri](https://www.lpalmieri.com/) for the heroics in landing this, as it required changing every file in the test suite.
+26. [#111427][111427]: Serialize all enums using external tagging. This changed the JSON representation of the data, but it's the same after deserialization into rust values. Doing this is more consistent [^enum_consistant], and allows (de)serializing to non-self-describing formats, such as postcard and bincode[^binary_format]. This can give a [significant performance improvement](https://rust-lang.zulipchat.com/#narrow/stream/266220-t-rustdoc/topic/.28De.29serialization.20speed.20of.20JSON.20docs/near/356983259). Special thanks to [Luca Palmieri](https://www.lpalmieri.com/) for the heroics in landing this, as it required changing every file in the test suite.
 27. [#115078][115078]: Rename `Typedef` to `TypeAlias` to be more in line with standard terminology.
 28. [#119246][119246]: Add `is_object_safe` field to `Trait`.
 
@@ -62,9 +62,9 @@ To ease adoption, I created the
 [`rustdoc-types`](https://crates.io/crates/rustdoc-types) crate. It's a
 somewhat automated repackaging of the in-tree `rustdoc-json-types` crate onto
 crates.io. Most consumers (AFAIKT) of rustdoc-json do so via this crate.
-However, despite it's importance, it's a personal project. It lives in
+However, despite its importance, it's a personal project. It lives in
 [my github account](https://github.com/aDotInTheVoid/rustdoc-types/tree/4be3505d55aa502f7aec3f71383a7dec660bd177/),
-and only I have the permissions to publish new versions crates.io.
+and only I have the permissions to publish new versions to crates.io.
 
 This is mostly transparent to users, who [can think of](https://youtu.be/OxQYyg_v3rw?t=991)
 `rustdoc-types` as being the same as canonical in-tree representation of the format. However,
@@ -102,7 +102,7 @@ stuff, and half so I can find these links easier in the future.
 
 [Link](https://rust-lang.zulipchat.com/#narrow/stream/266220-t-rustdoc/topic/Rustdoc.20JSON.3A.20Experimental.20rustc.20features).
 The core question here is "How much support should rustdoc JSON give to nightly language features", and "How should they be versioned".
-The conclusion is that for now, we should version them like regular language features (to keep )
+The conclusion is that for now, we should version them like regular language features (to keep `format_version` as an unambiguous description of which schema was used to serialize).
 
 The main idea that came out of this was the idea of the "metaformat". Rustdoc JSON
 has had a number of different formats over the years, but the way they were
@@ -146,7 +146,7 @@ anything less than ~2 years.
 Rustdoc JSON has a test suite that's built using [JSONPath](https://www.ietf.org/archive/id/draft-goessner-dispatch-jsonpath-00.html)
 to write assertions about the contents of the JSON.
 [Someone was wondering](https://rust-lang.zulipchat.com/#narrow/stream/266220-t-rustdoc/topic/.E2.9C.94.20Using.20cargo-semver-checks.20in.20rustdoc.20JSON.20tests.3A.20revisited)
-if it made sense to complement this with [trustfall](https://github.com/obi1kenobi/trustfall) driven tests, potentially based on the cargo-semver-checks or trustfall-rustdoc adaptor.
+if it made sense to complement this with [trustfall](https://github.com/obi1kenobi/trustfall) driven tests, potentially based on the cargo-semver-checks or trustfall-rustdoc-adaptor suites.
 
 We concluded that this wouldn't be a good idea, as it would require all format
 changes to also rewrite the trustfall code, which would add a significant
