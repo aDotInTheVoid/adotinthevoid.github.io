@@ -29,8 +29,9 @@ pub fn render(conf: &Config, input: &str) -> String {
             Event::Start(Tag::Heading(_, _, _)) => {
                 main_events.push(event);
 
-                let Some(Event::Text(t)) = parser.next() else {
-                    panic!()
+                let next_event = parser.next();
+                let Some(Event::Text(t)) = next_event else {
+                    panic!("got non-text heading {next_event:?}")
                 };
 
                 let mut slug = t.to_string().to_lowercase().replace(" ", "-");
@@ -114,7 +115,11 @@ pub fn render(conf: &Config, input: &str) -> String {
 
         let backlink = format!("<a href=\"#fnref:{n}\" class=\"footnote-backref\">↩</a>");
 
-        let mut fn_events = footnotes[fnname].to_owned();
+        // let mut fn_events = footnotes[fnname].to_owned();
+        let Some(mut fn_events) = footnotes.get(fnname).cloned() else {
+            panic!("Missing footnote {fnname:?}")
+        };
+
         assert_eq!(
             fn_events.last(),
             Some(&Event::End(Tag::Paragraph)),
