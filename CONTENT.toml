@@ -20,7 +20,6 @@ draft = true
 title = "Rustdoc JSON in 2023"
 path = "posts/rustdoc-json-2023.md"
 date = "2023-12-31"
-draft = true
 
 [[posts]]
 title = "Joy this Year"
