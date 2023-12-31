@@ -1,13 +1,14 @@
 
-It's been another year again, and folks [are][rep1] [writing][rep2] about what happened on their project this year,
+It's been another year again, and folks [are][rep1] [writing][rep2] [about][rep3] [what][rep4] [happened][rep5] on their project this year,
 and looking forward to next year. I did this [last year](/posts/rustdoc-json-2022/), and it was a super useful exercise for me
-personally, and also a good resource of what's changed, without having to trawl through  GitHub.
+personally, and also a good resource of what's changed, without having to trawl through GitHub.
 
 
 [rep1]: https://bytecodealliance.org/articles/wasmtime-and-cranelift-in-2023
 [rep2]: https://slint.dev/blog/2023-in-review
 [rep3]: https://www.eff.org/deeplinks/2023/12/fighting-european-threats-encryption-2023-year-review
 [rep4]: https://wordpress.com/blog/2023/12/29/2023-year-in-review/
+[rep5]: https://blog.thea.codes/my-2023/
 
 ## What's Rustdoc JSON
 
