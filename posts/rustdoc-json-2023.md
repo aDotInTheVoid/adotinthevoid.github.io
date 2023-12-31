@@ -12,14 +12,14 @@ personally, and also a good resource of what's changed, without having to trawl 
 
 ## What's Rustdoc JSON
 
-(note: You can skip this section if you're already framilar with it.)
+(note: You can skip this section if you're already familiar with it.)
 
-Rustdoc JSON is a unstable feature for rustdoc that allows generating machine readable JSON output descibing
-the API of a crate (instead of the normal human readable HTML output). If you think of rustdoc like a compiller
-from a crate to a description of its API [^rustdoc_as_compiller], this is an alternative target.
+Rustdoc JSON is a unstable feature for rustdoc that allows generating machine readable JSON output describing
+the API of a crate (instead of the normal human readable HTML output). If you think of rustdoc like a compiler
+from a crate to a description of its API [^rustdoc_as_compiler], this is an alternative target.
 
 
-[^rustdoc_as_compiller]: I find this is the most helpful way to think about
+[^rustdoc_as_compiler]: I find this is the most helpful way to think about
     rustdoc. It's an alternative backend for rustc, albeit one that forks off
     much earlier in the compilation pipeline, and doesn't produce
     executables/libraries.
@@ -36,11 +36,11 @@ The most user-facing changes this year were changes to the JSON format itself. W
 
 24. [#106354][106354]: `Variant` was split into `Variant` and `VariantKind`, so the enum discriminant can always be reported. Previously, it could only be reported for a plain enum variant (i.e. one with no fields or braces).
 25. [#109410][109410]: Support inherent associated types.
-26. [#111427][111427]: Serialize all enums using external tagging. This changed the JSON representation of the data, but it's the same after deserialization into rust values. Doing this is more consistent [^enum_consistant], and allows (de)serializing to non-self-describing formats, such as postcard and bincode[^binary_format]. This can give a [significant performance improvement](https://rust-lang.zulipchat.com/#narrow/stream/266220-t-rustdoc/topic/.28De.29serialization.20speed.20of.20JSON.20docs/near/356983259). Special thanks to [Luca Palmieri](https://www.lpalmieri.com/) for the heroics in landing this, as it required changing every file in the test suite.
+26. [#111427][111427]: Serialize all enums using external tagging. This changed the JSON representation of the data, but it's the same after deserialization into rust values. Doing this is more consistent [^enum_consistent], and allows (de)serializing to non-self-describing formats, such as postcard and bincode[^binary_format]. This can give a [significant performance improvement](https://rust-lang.zulipchat.com/#narrow/stream/266220-t-rustdoc/topic/.28De.29serialization.20speed.20of.20JSON.20docs/near/356983259). Special thanks to [Luca Palmieri](https://www.lpalmieri.com/) for the heroics in landing this, as it required changing every file in the test suite.
 27. [#115078][115078]: Rename `Typedef` to `TypeAlias` to be more in line with standard terminology.
 28. [#119246][119246]: Add `is_object_safe` field to `Trait`.
 
-[^enum_consistant]: Previously we had an ad-hoc mix of [3 different](https://github.com/rust-lang/rust/issues/93667) ways of serializing enums to JSON.
+[^enum_consistent]: Previously we had an ad-hoc mix of [3 different](https://github.com/rust-lang/rust/issues/93667) ways of serializing enums to JSON.
 
 [^binary_format]: To be clear, their are no plans for rustdoc itself to emit a binary format. However, it allows 3rd party tools to easily convert the JSON to some other format, that they themselves can load.
 
@@ -61,7 +61,7 @@ test tooling. However, it can't be directly used by 3rd party code, as it isn't 
 To ease adoption, I created the
 [`rustdoc-types`](https://crates.io/crates/rustdoc-types) crate. It's a
 somewhat automated repackaging of the in-tree `rustdoc-json-types` crate onto
-crates.io. Most consumers (AFAIKT) of rustdoc-json do so via this crate.
+crates.io. Most consumers (AFAICT) of rustdoc-json do so via this crate.
 However, despite its importance, it's a personal project. It lives in
 [my github account](https://github.com/aDotInTheVoid/rustdoc-types/tree/4be3505d55aa502f7aec3f71383a7dec660bd177/),
 and only I have the permissions to publish new versions to crates.io.
@@ -98,7 +98,7 @@ happening again.
 This section is half so you can see how the sausage gets made with designing
 stuff, and half so I can find these links easier in the future.
 
-### The Metaformat, and documenting signatures that relly on nightly features
+### The Metaformat, and documenting signatures that rely on nightly features
 
 [Link](https://rust-lang.zulipchat.com/#narrow/stream/266220-t-rustdoc/topic/Rustdoc.20JSON.3A.20Experimental.20rustc.20features).
 The core question here is "How much support should rustdoc JSON give to nightly language features", and "How should they be versioned".
@@ -127,7 +127,7 @@ mechanisms, and would be much more unexpected.
 Therefore, we should aim to only change metaformat once,
 and to a metaformat that we believe we can stabilize.
 
-### Stablilization Requirements
+### Stabilization Requirements
 
 We also talked a 
 [couple](https://rust-lang.zulipchat.com/#narrow/stream/266220-rustdoc/topic/Rustdoc.20JSON.3A.20Stabilization.20criteria)
