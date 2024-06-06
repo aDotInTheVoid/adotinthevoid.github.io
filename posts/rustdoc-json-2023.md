@@ -116,12 +116,12 @@ the same mechanism for communicating changes [^current_metaformat].
 The conclusion is that the existing metaformat is fine for now, but probably not
 suitable for stabilization. 
 
-Changing the metaformat is quite disruptive to the ecosystem  than changing the format.
+Changing the metaformat is much more disruptive to the ecosystem than changing the format.
 This is because existing tools rely on the metaformat to
 [detect if they're using the correct format](https://github.com/awslabs/cargo-check-external-types/blob/4bbf5a80fced7e11fdf855537b4202e225596f67/src/cargo.rs#L88-L101)
 and even
 [support multiple format versions at once](https://github.com/obi1kenobi/trustfall-rustdoc/blob/a9d7739b848d6bfc05f50ad7c179faec38e18144/src/parser.rs#L43-L70).
-Therefor, we can be quite free to change the format, as the ecosystem is used to it,
+Therefore, we can be quite free to change the format, as the ecosystem is used to it,
 and has mechanisms to minimize disruption. But a metaformat change would break all these
 mechanisms, and would be much more unexpected.
 Therefore, we should aim to only change metaformat once,
