@@ -17,7 +17,7 @@
         {% if post.draft %}
         [DRAFT]
         {% endif %}
-        <a href="{{base_url | safe}}{{post.url | safe}}/">{{post.title}}</a>: {{post.date}}
+        <a href="{{base_url | safe}}{{post.url | safe}}/">{{post.title}}</a>: {{post.date | safe}}
     </li>
     {% endif %}
     {% endfor %}

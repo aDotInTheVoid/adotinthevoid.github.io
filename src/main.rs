@@ -1,4 +1,5 @@
 mod config;
+mod format_date;
 mod highlight;
 mod markdown;
 mod rss_channel;
@@ -107,7 +108,7 @@ fn lower_post(
     let args = HomePostArgs {
         title: p.title.clone(),
         url: p.path.with_extension("").to_string(),
-        date: p.date.format("%-d %B %Y").to_string(),
+        date: format_date::format_date_html(&p.date),
         content: markdown::render(&config, &fs::read_to_string(&p.path)?),
         draft: p.draft,
         hidden: p.hidden,
